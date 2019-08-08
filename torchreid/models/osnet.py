@@ -14,7 +14,7 @@ import torchvision
 ##########
 class ConvLayer(nn.Module):
     """Convolution layer (conv + bn + relu)."""
-    
+
     def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, groups=1, IN=False):
         super(ConvLayer, self).__init__()
         self.conv = nn.Conv2d(in_channels, out_channels, kernel_size, stride=stride,
@@ -34,7 +34,7 @@ class ConvLayer(nn.Module):
 
 class Conv1x1(nn.Module):
     """1x1 convolution + bn + relu."""
-    
+
     def __init__(self, in_channels, out_channels, stride=1, groups=1):
         super(Conv1x1, self).__init__()
         self.conv = nn.Conv2d(in_channels, out_channels, 1, stride=stride, padding=0,
@@ -51,7 +51,7 @@ class Conv1x1(nn.Module):
 
 class Conv1x1Linear(nn.Module):
     """1x1 convolution + bn (w/o non-linearity)."""
-    
+
     def __init__(self, in_channels, out_channels, stride=1):
         super(Conv1x1Linear, self).__init__()
         self.conv = nn.Conv2d(in_channels, out_channels, 1, stride=stride, padding=0, bias=False)
@@ -65,7 +65,7 @@ class Conv1x1Linear(nn.Module):
 
 class Conv3x3(nn.Module):
     """3x3 convolution + bn + relu."""
-    
+
     def __init__(self, in_channels, out_channels, stride=1, groups=1):
         super(Conv3x3, self).__init__()
         self.conv = nn.Conv2d(in_channels, out_channels, 3, stride=stride, padding=1,
@@ -85,7 +85,7 @@ class LightConv3x3(nn.Module):
 
     1x1 (linear) + dw 3x3 (nonlinear).
     """
-    
+
     def __init__(self, in_channels, out_channels):
         super(LightConv3x3, self).__init__()
         self.conv1 = nn.Conv2d(in_channels, out_channels, 1, stride=1, padding=0, bias=False)
@@ -146,7 +146,7 @@ class ChannelGate(nn.Module):
 
 class OSBlock(nn.Module):
     """Omni-scale feature learning block."""
-    
+
     def __init__(self, in_channels, out_channels, IN=False, bottleneck_reduction=4, **kwargs):
         super(OSBlock, self).__init__()
         mid_channels = out_channels // bottleneck_reduction
@@ -198,7 +198,7 @@ class OSBlock(nn.Module):
 ##########
 class OSNet(nn.Module):
     """Omni-Scale Network.
-    
+
     Reference:
         - Zhou et al. Omni-Scale Feature Learning for Person Re-Identification. ICCV, 2019.
     """
@@ -207,9 +207,9 @@ class OSNet(nn.Module):
         super(OSNet, self).__init__()
         num_blocks = len(blocks)
         assert num_blocks == len(layers)
-        assert num_blocks == len(channels) - 1 
+        assert num_blocks == len(channels) - 1
         self.loss = loss
-        
+
         # convolutional backbone
         self.conv1 = ConvLayer(3, channels[0], 7, stride=2, padding=3, IN=IN)
         self.maxpool = nn.MaxPool2d(3, stride=2, padding=1)
@@ -222,16 +222,16 @@ class OSNet(nn.Module):
         self.fc = self._construct_fc_layer(feature_dim, channels[3], dropout_p=None)
         # identity classification layer
         self.classifier = nn.Linear(self.feature_dim, num_classes)
-        
+
         self._init_params()
 
     def _make_layer(self, block, layer, in_channels, out_channels, reduce_spatial_size, IN=False):
         layers = []
-        
+
         layers.append(block(in_channels, out_channels, IN=IN))
         for i in range(1, layer):
             layers.append(block(out_channels, out_channels, IN=IN))
-        
+
         if reduce_spatial_size:
             layers.append(
                 nn.Sequential(
@@ -239,17 +239,17 @@ class OSNet(nn.Module):
                     nn.AvgPool2d(2, stride=2)
                 )
             )
-        
+
         return nn.Sequential(*layers)
 
     def _construct_fc_layer(self, fc_dims, input_dim, dropout_p=None):
         if fc_dims is None or fc_dims<0:
             self.feature_dim = input_dim
             return None
-        
+
         if isinstance(fc_dims, int):
             fc_dims = [fc_dims]
-        
+
         layers = []
         for dim in fc_dims:
             layers.append(nn.Linear(input_dim, dim))
@@ -258,9 +258,9 @@ class OSNet(nn.Module):
             if dropout_p is not None:
                 layers.append(nn.Dropout(p=dropout_p))
             input_dim = dim
-        
+
         self.feature_dim = fc_dims[-1]
-        
+
         return nn.Sequential(*layers)
 
     def _init_params(self):
@@ -269,15 +269,15 @@ class OSNet(nn.Module):
                 nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
                 if m.bias is not None:
                     nn.init.constant_(m.bias, 0)
-            
+
             elif isinstance(m, nn.BatchNorm2d):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
-            
+
             elif isinstance(m, nn.BatchNorm1d):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
-            
+
             elif isinstance(m, nn.Linear):
                 nn.init.normal_(m.weight, 0, 0.01)
                 if m.bias is not None:
@@ -299,7 +299,10 @@ class OSNet(nn.Module):
         v = self.global_avgpool(x)
         v = v.view(v.size(0), -1)
         if self.fc is not None:
-            v = self.fc(v)
+            #v = self.fc(v)
+            v = self.fc[0](v).view(1, -1, 1)
+            v = self.fc[1](v)
+            v = self.fc[2](v)
         if not self.training:
             return v
         y = self.classifier(v)
