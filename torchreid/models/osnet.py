@@ -347,7 +347,6 @@ class OSNet(nn.Module):
         v = v.view(v.size(0), -1)
         if not self.training:
             return v
-        v = v.view(v.size(0), -1)
         y = self.classifier(v)
         if self.loss in ['softmax', 'am_softmax', 'adacos', 'd_softmax']:
             if get_of_outputs:
