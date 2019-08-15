@@ -84,7 +84,7 @@ class AMSoftmaxLoss(nn.Module):
                 log_probs = self.logsoftmax(output)
                 probs = torch.exp(log_probs)
                 ent = (-probs*torch.log(probs.clamp(min=1e-12))).sum(1).mean(0)
-                return F.cross_entropy(output, target) - 0.085 * ent
+                return F.relu(F.cross_entropy(output, target) - 0.085 * ent)
             else:
                 return F.cross_entropy(self.s*output, target)
 
