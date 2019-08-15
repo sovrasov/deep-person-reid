@@ -42,6 +42,7 @@ class AMSoftmaxLoss(nn.Module):
         self.num_classes = num_classes
         self.use_gpu = use_gpu
         self.conf_penalty = conf_penalty
+        self.logsoftmax = nn.LogSoftmax(dim=1)
 
         assert margin_type in AMSoftmaxLoss.margin_types
         self.margin_type = margin_type
@@ -78,7 +79,14 @@ class AMSoftmaxLoss(nn.Module):
         output = torch.where(index, phi_theta, cos_theta)
 
         if self.gamma == 0 and self.t == 1.:
-            return F.cross_entropy(self.s*output, target)
+            if self.conf_penalty:
+                output *= self.s
+                log_probs = self.logsoftmax(output)
+                probs = torch.exp(log_probs)
+                ent = (-probs*torch.log(probs.clamp(min=1e-12))).sum(1).mean(0)
+                return F.cross_entropy(output, target) - 0.085 * ent
+            else:
+                return F.cross_entropy(self.s*output, target)
 
         if self.t > 1:
             h_theta = self.t - 1 + self.t*cos_theta

@@ -267,7 +267,10 @@ class OSNet(nn.Module):
         for dim in fc_dims:
             layers.append(nn.Linear(input_dim, dim))
             layers.append(nn.BatchNorm1d(dim))
-            layers.append(nn.PReLU())
+            if self.loss != 'am_softmax':
+                layers.append(nn.ReLU(inplace=True))
+            else:
+                layers.append(nn.PReLU())
             if dropout_p is not None:
                 layers.append(nn.Dropout(p=dropout_p))
             input_dim = dim
@@ -315,11 +318,12 @@ class OSNet(nn.Module):
             if self.training:
                 v = self.fc(v)
             else:
-                v = self.fc[0](v).view(1, -1, 1)
+                v = self.fc[0](v).view(v.size(0), -1, 1)
                 v = self.fc[1](v)
                 v = self.fc[2](v)
         if not self.training:
             return v
+        v = v.view(v.size(0), -1)
         y = self.classifier(v)
         if self.loss == 'softmax' or self.loss == 'am_softmax':
             return y
