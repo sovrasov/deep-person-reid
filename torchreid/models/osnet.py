@@ -203,7 +203,7 @@ class OSNet(nn.Module):
         - Zhou et al. Omni-Scale Feature Learning for Person Re-Identification. ICCV, 2019.
     """
 
-    def __init__(self, num_classes, blocks, layers, channels, feature_dim=512, loss='softmax', IN=False, **kwargs):
+    def __init__(self, num_classes, blocks, layers, channels, feature_dim=256, loss='softmax', IN=False, **kwargs):
         super(OSNet, self).__init__()
         num_blocks = len(blocks)
         assert num_blocks == len(layers)
@@ -221,7 +221,11 @@ class OSNet(nn.Module):
         # fully connected layer
         self.fc = self._construct_fc_layer(feature_dim, channels[3], dropout_p=None)
         # identity classification layer
-        self.classifier = nn.Linear(self.feature_dim, num_classes)
+        if self.loss != 'am_softmax':
+            self.classifier = nn.Linear(self.feature_dim, num_classes)
+        else:
+            from torchreid.losses import AngleSimpleLinear
+            self.classifier = AngleSimpleLinear(self.feature_dim, num_classes)
 
         self._init_params()
 
@@ -254,7 +258,7 @@ class OSNet(nn.Module):
         for dim in fc_dims:
             layers.append(nn.Linear(input_dim, dim))
             layers.append(nn.BatchNorm1d(dim))
-            layers.append(nn.ReLU(inplace=True))
+            layers.append(nn.PReLU())
             if dropout_p is not None:
                 layers.append(nn.Dropout(p=dropout_p))
             input_dim = dim
@@ -299,14 +303,16 @@ class OSNet(nn.Module):
         v = self.global_avgpool(x)
         v = v.view(v.size(0), -1)
         if self.fc is not None:
-            #v = self.fc(v)
-            v = self.fc[0](v).view(1, -1, 1)
-            v = self.fc[1](v)
-            v = self.fc[2](v)
+            if self.training:
+                v = self.fc(v)
+            else:
+                v = self.fc[0](v).view(1, -1, 1)
+                v = self.fc[1](v)
+                v = self.fc[2](v)
         if not self.training:
             return v
         y = self.classifier(v)
-        if self.loss == 'softmax':
+        if self.loss == 'softmax' or self.loss == 'am_softmax':
             return y
         elif self.loss == 'triplet':
             return y, v

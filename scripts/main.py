@@ -38,7 +38,19 @@ def build_engine(args, datamanager, model, optimizer, scheduler):
                 optimizer,
                 scheduler=scheduler,
                 use_cpu=args.use_cpu,
-                label_smooth=args.label_smooth
+                label_smooth=args.label_smooth,
+                conf_penalty=args.conf_pen,
+                softmax_type='stock'
+            )
+        elif args.loss == 'am_softmax':
+            engine = torchreid.engine.ImageSoftmaxEngine(
+                datamanager,
+                model,
+                optimizer,
+                scheduler=scheduler,
+                use_cpu=args.use_cpu,
+                conf_penalty=args.conf_pen,
+                softmax_type='am'
             )
         else:
             engine = torchreid.engine.ImageTripletEngine(
@@ -52,7 +64,7 @@ def build_engine(args, datamanager, model, optimizer, scheduler):
                 use_cpu=args.use_cpu,
                 label_smooth=args.label_smooth
             )
-    
+
     else:
         if args.loss == 'softmax':
             engine = torchreid.engine.VideoSoftmaxEngine(
@@ -104,7 +116,7 @@ def main():
         warnings.warn('Currently using CPU, however, GPU is highly recommended')
 
     datamanager = build_datamanager(args)
-    
+
     print('Building model: {}'.format(args.arch))
     model = torchreid.models.build_model(
         name=args.arch,
@@ -118,7 +130,7 @@ def main():
 
     if args.load_weights and check_isfile(args.load_weights):
         load_pretrained_weights(model, args.load_weights)
-    
+
     if use_gpu:
         model = nn.DataParallel(model).cuda()
 

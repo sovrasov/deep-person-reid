@@ -71,7 +71,7 @@ def load_checkpoint(fpath):
     Returns:
         dict
 
-    Examples::  
+    Examples::
         >>> from torchreid.utils import load_checkpoint
         >>> fpath = 'log/my_model/model.pth.tar-10'
         >>> checkpoint = load_checkpoint(fpath)
@@ -139,7 +139,7 @@ def adjust_learning_rate(optimizer, base_lr, epoch, stepsize=20, gamma=0.1,
     else:
         # decay learning rate by gamma for every stepsize
         lr = base_lr * (gamma ** (epoch // stepsize))
-    
+
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
 
@@ -213,7 +213,7 @@ def count_num_param(model):
         >>> model_size = count_num_param(model)
 
     .. warning::
-        
+
         This method is deprecated in favor of
         ``torchreid.utils.compute_model_complexity``.
     """
@@ -227,7 +227,7 @@ def count_num_param(model):
     if hasattr(model, 'classifier') and isinstance(model.classifier, nn.Module):
         # we ignore the classifier because it is unused at test time
         num_param -= sum(p.numel() for p in model.classifier.parameters())
-    
+
     return num_param
 
 
@@ -252,24 +252,24 @@ def load_pretrained_weights(model, weight_path):
         state_dict = checkpoint['state_dict']
     else:
         state_dict = checkpoint
-    
+
     model_dict = model.state_dict()
     new_state_dict = OrderedDict()
     matched_layers, discarded_layers = [], []
-    
+
     for k, v in state_dict.items():
         if k.startswith('module.'):
             k = k[7:] # discard module.
-        
+
         if k in model_dict and model_dict[k].size() == v.size():
             new_state_dict[k] = v
             matched_layers.append(k)
         else:
             discarded_layers.append(k)
-    
+
     model_dict.update(new_state_dict)
     model.load_state_dict(model_dict)
-    
+
     if len(matched_layers) == 0:
         warnings.warn(
             'The pretrained weights "{}" cannot be loaded, '

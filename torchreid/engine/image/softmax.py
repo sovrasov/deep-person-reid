@@ -9,7 +9,7 @@ import torch
 
 import torchreid
 from torchreid.engine import engine
-from torchreid.losses import CrossEntropyLoss
+from torchreid.losses import CrossEntropyLoss, AMSoftmaxLoss
 from torchreid.utils import AverageMeter, open_specified_layers, open_all_layers
 from torchreid import metrics
 
@@ -27,7 +27,7 @@ class ImageSoftmaxEngine(engine.Engine):
         label_smooth (bool, optional): use label smoothing regularizer. Default is True.
 
     Examples::
-        
+
         import torch
         import torchreid
         datamanager = torchreid.data.ImageDataManager(
@@ -63,14 +63,23 @@ class ImageSoftmaxEngine(engine.Engine):
     """
 
     def __init__(self, datamanager, model, optimizer, scheduler=None, use_cpu=False,
-                 label_smooth=True):
+                 softmax_type='stock', label_smooth=True, conf_penalty=False):
         super(ImageSoftmaxEngine, self).__init__(datamanager, model, optimizer, scheduler, use_cpu)
-        
-        self.criterion = CrossEntropyLoss(
-            num_classes=self.datamanager.num_train_pids,
-            use_gpu=self.use_gpu,
-            label_smooth=label_smooth
-        )
+
+        if softmax_type == 'stock':
+            self.criterion = CrossEntropyLoss(
+                num_classes=self.datamanager.num_train_pids,
+                use_gpu=self.use_gpu,
+                label_smooth=label_smooth,
+                conf_penalty=conf_penalty
+            )
+        elif softmax_type == 'am':
+            self.criterion = AMSoftmaxLoss(
+                num_classes=self.datamanager.num_train_pids,
+                use_gpu=self.use_gpu,
+                conf_penalty=conf_penalty,
+                m=0., s=8
+            )
 
     def train(self, epoch, max_epoch, trainloader, fixbase_epoch=0, open_layers=None, print_freq=10):
         losses = AverageMeter()
@@ -93,7 +102,7 @@ class ImageSoftmaxEngine(engine.Engine):
             if self.use_gpu:
                 imgs = imgs.cuda()
                 pids = pids.cuda()
-            
+
             self.optimizer.zero_grad()
             outputs = self.model(imgs)
             loss = self._compute_loss(self.criterion, outputs, pids)
@@ -126,7 +135,7 @@ class ImageSoftmaxEngine(engine.Engine):
                       eta=eta_str
                     )
                 )
-            
+
             end = time.time()
 
         if self.scheduler is not None:
