@@ -35,7 +35,19 @@ def build_engine(cfg, datamanager, model, optimizer, scheduler):
                 optimizer,
                 scheduler=scheduler,
                 use_gpu=cfg.use_gpu,
-                label_smooth=cfg.loss.softmax.label_smooth
+                label_smooth=cfg.loss.softmax.label_smooth,
+                conf_penalty=args.conf_pen,
+                softmax_type='stock'
+            )
+        elif args.loss == 'am_softmax':
+            engine = torchreid.engine.ImageSoftmaxEngine(
+                datamanager,
+                model,
+                optimizer,
+                scheduler=scheduler,
+                use_gpu=cfg.use_gpu,
+                conf_penalty=args.conf_pen,
+                softmax_type='am'
             )
         else:
             engine = torchreid.engine.ImageTripletEngine(
@@ -49,7 +61,7 @@ def build_engine(cfg, datamanager, model, optimizer, scheduler):
                 use_gpu=cfg.use_gpu,
                 label_smooth=cfg.loss.softmax.label_smooth
             )
-    
+
     else:
         if cfg.loss.name == 'softmax':
             engine = torchreid.engine.VideoSoftmaxEngine(
@@ -114,17 +126,26 @@ def main():
     log_name = 'test.log' if cfg.test.evaluate else 'train.log'
     log_name += time.strftime('-%Y-%m-%d-%H-%M-%S')
     sys.stdout = Logger(osp.join(cfg.data.save_dir, log_name))
-    
+
     print('Show configuration\n{}\n'.format(cfg))
     print('Collecting env info ...')
     print('** System info **\n{}\n'.format(collect_env_info()))
-    
+
     if cfg.use_gpu:
         torch.backends.cudnn.benchmark = True
-    
+<<<<<<< 89f3c31d9198eeb02628cefdf2367a35f22fa524
+
     datamanager = build_datamanager(cfg)
-    
+
     print('Building model: {}'.format(cfg.model.name))
+=======
+    else:
+        warnings.warn('Currently using CPU, however, GPU is highly recommended')
+
+    datamanager = build_datamanager(args)
+
+    print('Building model: {}'.format(args.arch))
+>>>>>>> Add am-softmax
     model = torchreid.models.build_model(
         name=cfg.model.name,
         num_classes=datamanager.num_train_pids,
@@ -135,10 +156,17 @@ def main():
     num_params, flops = compute_model_complexity(model, (1, 3, cfg.data.height, cfg.data.width))
     print('Model complexity: params={:,} flops={:,}'.format(num_params, flops))
 
+<<<<<<< 89f3c31d9198eeb02628cefdf2367a35f22fa524
     if cfg.model.load_weights and check_isfile(cfg.model.load_weights):
         load_pretrained_weights(model, cfg.model.load_weights)
-    
+
     if cfg.use_gpu:
+=======
+    if args.load_weights and check_isfile(args.load_weights):
+        load_pretrained_weights(model, args.load_weights)
+
+    if use_gpu:
+>>>>>>> Add am-softmax
         model = nn.DataParallel(model).cuda()
 
     optimizer = torchreid.optim.build_optimizer(model, **optimizer_kwargs(cfg))
