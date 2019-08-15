@@ -51,7 +51,7 @@ class CrossEntropyLoss(nn.Module):
         sm_loss = (- targets * log_probs).mean(0).sum()
         if self.conf_penalty:
             probs = torch.exp(log_probs)
-            ent = (-probs*torch.log(probs.clamp(min=1e-12))).mean(0).sum()
-            return nn.functional.relu(5 * sm_loss - 0.0085 * ent)
+            ent = (-probs*torch.log(probs.clamp(min=1e-12))).sum(1).mean(0)
+            return nn.functional.relu(5 * sm_loss - 0.085 * ent)
 
         return sm_loss
