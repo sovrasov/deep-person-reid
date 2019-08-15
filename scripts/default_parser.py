@@ -123,6 +123,10 @@ def init_parser():
                         help='use label smoothing regularizer in cross entropy loss')
     parser.add_argument('--conf-pen', action='store_true',
                         help='use confidence penalty regularizer in cross entropy loss')
+    parser.add_argument('--m', type=float, default=0.35,
+                        help='Margin for AMSoftmax')
+    parser.add_argument('--s', type=float, default=10.,
+                        help='Scale for AMSoftmax')
 
     # ************************************************************
     # Hard triplet loss
