@@ -312,9 +312,9 @@ class OSNet(nn.Module):
                 v = self.fc[0](v).view(v.size(0), -1, 1)
                 v = self.fc[1](v)
                 v = self.fc[2](v)
+        v = v.view(v.size(0), -1)
         if not self.training:
             return v
-        v = v.view(v.size(0), -1)
         y = self.classifier(v)
         if self.loss == 'softmax' or self.loss == 'am_softmax':
             return y
