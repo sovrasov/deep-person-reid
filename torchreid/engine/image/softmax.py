@@ -61,8 +61,10 @@ class ImageSoftmaxEngine(engine.Engine):
             print_freq=10
         )
     """
-    def __init__(self, datamanager, model, optimizer, scheduler=None, use_gpu=True,
-                 softmax_type='stock', label_smooth=True, conf_penalty=False):
+
+    def __init__(self, datamanager, model, optimizer, scheduler=None, use_gpu=False,
+                 softmax_type='stock', label_smooth=True, conf_penalty=False,
+                 m=0.35, s=10):
         super(ImageSoftmaxEngine, self).__init__(datamanager, model, optimizer, scheduler, use_gpu)
 
         if softmax_type == 'stock':
@@ -77,7 +79,7 @@ class ImageSoftmaxEngine(engine.Engine):
                 num_classes=self.datamanager.num_train_pids,
                 use_gpu=self.use_gpu,
                 conf_penalty=conf_penalty,
-                m=0., s=8
+                m=m, s=s
             )
 
     def train(self, epoch, max_epoch, trainloader, fixbase_epoch=0, open_layers=None, print_freq=10):

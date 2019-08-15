@@ -47,7 +47,9 @@ def build_engine(cfg, datamanager, model, optimizer, scheduler):
                 scheduler=scheduler,
                 use_gpu=cfg.use_gpu,
                 conf_penalty=args.conf_pen,
-                softmax_type='am'
+                softmax_type='am',
+                m=args.m,
+                s=args.s
             )
         else:
             engine = torchreid.engine.ImageTripletEngine(
