@@ -36,22 +36,14 @@ def build_engine(cfg, datamanager, model, optimizer, scheduler):
                 scheduler=scheduler,
                 use_gpu=cfg.use_gpu,
                 label_smooth=cfg.loss.softmax.label_smooth,
-<<<<<<< 5c1f87c0e61c25ef0d743978903687ab1516a877
                 conf_penalty=cfg.loss.softmax.conf_pen,
                 softmax_type='stock',
             )
         elif cfg.loss.name == 'am_softmax':
-=======
-                conf_penalty=args.conf_pen,
-                softmax_type='stock'
-            )
-        elif args.loss == 'am_softmax':
->>>>>>> Add am-softmax
             engine = torchreid.engine.ImageSoftmaxEngine(
                 datamanager,
                 model,
                 optimizer,
-<<<<<<< 5c1f87c0e61c25ef0d743978903687ab1516a877
                 cfg.reg,
                 scheduler=scheduler,
                 use_gpu=cfg.use_gpu,
@@ -81,12 +73,6 @@ def build_engine(cfg, datamanager, model, optimizer, scheduler):
                 use_gpu=cfg.use_gpu,
                 conf_penalty=cfg.loss.softmax.conf_pen,
                 softmax_type='d_sm',
-=======
-                scheduler=scheduler,
-                use_gpu=cfg.use_gpu,
-                conf_penalty=args.conf_pen,
-                softmax_type='am'
->>>>>>> Add am-softmax
             )
         else:
             engine = torchreid.engine.ImageTripletEngine(
