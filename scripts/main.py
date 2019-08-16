@@ -6,6 +6,7 @@ import time
 
 import torch
 import torch.nn as nn
+from tensorboardX import SummaryWriter
 
 from default_parser import (
     init_parser, imagedata_kwargs, videodata_kwargs,
@@ -29,7 +30,7 @@ def build_datamanager(args):
         return torchreid.data.VideoDataManager(**videodata_kwargs(args))
 
 
-def build_engine(args, datamanager, model, optimizer, scheduler):
+def build_engine(args, datamanager, model, optimizer, scheduler, log_writer):
     if args.app == 'image':
         if args.loss == 'softmax':
             engine = torchreid.engine.ImageSoftmaxEngine(
@@ -40,7 +41,8 @@ def build_engine(args, datamanager, model, optimizer, scheduler):
                 use_cpu=args.use_cpu,
                 label_smooth=args.label_smooth,
                 conf_penalty=args.conf_pen,
-                softmax_type='stock'
+                softmax_type='stock',
+                log_writer=log_writer
             )
         elif args.loss == 'am_softmax':
             engine = torchreid.engine.ImageSoftmaxEngine(
@@ -52,7 +54,8 @@ def build_engine(args, datamanager, model, optimizer, scheduler):
                 conf_penalty=args.conf_pen,
                 softmax_type='am',
                 m=args.m,
-                s=args.s
+                s=args.s,
+                log_writer=log_writer
             )
         else:
             engine = torchreid.engine.ImageTripletEngine(
@@ -104,6 +107,7 @@ def main():
     log_name = 'test.log' if args.evaluate else 'train.log'
     log_name += time.strftime('-%Y-%m-%d-%H-%M-%S')
     sys.stdout = Logger(osp.join(args.save_dir, log_name))
+    tb_log_writer = SummaryWriter(osp.join(args.save_dir, log_name + '_tbl'))
     print('** Arguments **')
     arg_keys = list(args.__dict__.keys())
     arg_keys.sort()
@@ -144,7 +148,7 @@ def main():
         args.start_epoch = resume_from_checkpoint(args.resume, model, optimizer=optimizer)
 
     print('Building {}-engine for {}-reid'.format(args.loss, args.app))
-    engine = build_engine(args, datamanager, model, optimizer, scheduler)
+    engine = build_engine(args, datamanager, model, optimizer, scheduler, tb_log_writer)
 
     engine.run(**engine_run_kwargs(args))
 

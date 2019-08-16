@@ -64,8 +64,10 @@ class ImageSoftmaxEngine(engine.Engine):
 
     def __init__(self, datamanager, model, optimizer, scheduler=None, use_cpu=False,
                  softmax_type='stock', label_smooth=True, conf_penalty=False,
-                 m=0.35, s=10):
+                 m=0.35, s=10, log_writer=None):
         super(ImageSoftmaxEngine, self).__init__(datamanager, model, optimizer, scheduler, use_cpu)
+
+        self.log_writer = log_writer
 
         if softmax_type == 'stock':
             self.criterion = CrossEntropyLoss(
@@ -120,6 +122,10 @@ class ImageSoftmaxEngine(engine.Engine):
                 num_batches = len(trainloader)
                 eta_seconds = batch_time.avg * (num_batches-(batch_idx+1) + (max_epoch-(epoch+1))*num_batches)
                 eta_str = str(datetime.timedelta(seconds=int(eta_seconds)))
+                n_iter = len(trainloader) * epoch + batch_idx
+                self.log_writer.add_scalar('Loss/train', losses.val, n_iter)
+                self.log_writer.add_scalar('Accuracy/train', accs.val, n_iter)
+                self.log_writer.add_scalar('Learning rate', self.optimizer.param_groups[0]['lr'], n_iter)
                 print('Epoch: [{0}/{1}][{2}/{3}]\t'
                       'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
                       'Data {data_time.val:.3f} ({data_time.avg:.3f})\t'
