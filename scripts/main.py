@@ -6,6 +6,7 @@ import argparse
 
 import torch
 import torch.nn as nn
+from tensorboardX import SummaryWriter
 
 from default_config import (
     get_default_config, imagedata_kwargs, videodata_kwargs,
@@ -162,14 +163,6 @@ def main():
     datamanager = build_datamanager(cfg)
 
     print('Building model: {}'.format(cfg.model.name))
-=======
-    else:
-        warnings.warn('Currently using CPU, however, GPU is highly recommended')
-
-    datamanager = build_datamanager(args)
-
-    print('Building model: {}'.format(args.arch))
->>>>>>> Add am-softmax
     model = torchreid.models.build_model(
         name=cfg.model.name,
         num_classes=datamanager.num_train_pids,

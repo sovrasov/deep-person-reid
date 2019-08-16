@@ -67,6 +67,8 @@ class ImageSoftmaxEngine(engine.Engine):
                  m=0.35, s=10):
         super(ImageSoftmaxEngine, self).__init__(datamanager, model, reg_cfg, optimizer, scheduler, use_gpu)
 
+        self.log_writer = log_writer
+
         if softmax_type == 'stock':
             self.criterion = CrossEntropyLoss(
                 num_classes=self.datamanager.num_train_pids,
@@ -149,6 +151,10 @@ class ImageSoftmaxEngine(engine.Engine):
                 # estimate remaining time
                 eta_seconds = batch_time.avg * (num_batches-(batch_idx+1) + (max_epoch-(epoch+1))*num_batches)
                 eta_str = str(datetime.timedelta(seconds=int(eta_seconds)))
+                n_iter = len(trainloader) * epoch + batch_idx
+                self.log_writer.add_scalar('Loss/train', losses.val, n_iter)
+                self.log_writer.add_scalar('Accuracy/train', accs.val, n_iter)
+                self.log_writer.add_scalar('Learning rate', self.optimizer.param_groups[0]['lr'], n_iter)
                 print('Epoch: [{0}/{1}][{2}/{3}]\t'
                       'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
                       'Data {data_time.val:.3f} ({data_time.avg:.3f})\t'
