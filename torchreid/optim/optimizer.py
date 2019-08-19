@@ -137,23 +137,11 @@ def build_optimizer(
             alpha=rmsprop_alpha,
         )
 
-<<<<<<< 2f6399052f4cd246e3a8d363d961e2acfa93a59c
     elif optim == 'radam':
-=======
-    if optim == 'radam':
->>>>>>> Add radam optimizer
         optimizer = RAdam(
             param_groups,
             lr=lr,
             weight_decay=weight_decay,
-<<<<<<< 2f6399052f4cd246e3a8d363d961e2acfa93a59c
             betas=(adam_beta1, adam_beta2)
         )
-
     return optimizer
-=======
-            betas=(adam_beta1, adam_beta2),
-        )
-
-    return optimizer
->>>>>>> Add radam optimizer
