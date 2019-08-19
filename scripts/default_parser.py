@@ -178,6 +178,8 @@ def init_parser():
     # ************************************************************
     # Miscs
     # ************************************************************
+    parser.add_argument('--dropout-prob', type=float, default=0.0,
+                        help='Droputt parameter for the last FC layer')
     parser.add_argument('--print-freq', type=int, default=20,
                         help='print frequency')
     parser.add_argument('--seed', type=int, default=1,

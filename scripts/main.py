@@ -129,7 +129,8 @@ def main():
         num_classes=datamanager.num_train_pids,
         loss=args.loss.lower(),
         pretrained=(not args.no_pretrained),
-        use_gpu=use_gpu
+        use_gpu=use_gpu,
+        dropout_prob=args.dropout_prob
     )
     num_params, flops = compute_model_complexity(model, (1, 3, args.height, args.width))
     print('Model complexity: params={:,} flops={:,}'.format(num_params, flops))

@@ -203,7 +203,8 @@ class OSNet(nn.Module):
         - Zhou et al. Omni-Scale Feature Learning for Person Re-Identification. ICCV, 2019.
     """
 
-    def __init__(self, num_classes, blocks, layers, channels, feature_dim=256, loss='softmax', IN=False, **kwargs):
+    def __init__(self, num_classes, blocks, layers, channels, feature_dim=256,
+                 loss='softmax', IN=False, dropout_prob=0, **kwargs):
         super(OSNet, self).__init__()
         num_blocks = len(blocks)
         assert num_blocks == len(layers)
@@ -219,7 +220,7 @@ class OSNet(nn.Module):
         self.conv5 = Conv1x1(channels[3], channels[3])
         self.global_avgpool = nn.AdaptiveAvgPool2d(1)
         # fully connected layer
-        self.fc = self._construct_fc_layer(feature_dim, channels[3], dropout_p=None)
+        self.fc = self._construct_fc_layer(feature_dim, channels[3], dropout_p=dropout_prob)
         # identity classification layer
         if self.loss != 'am_softmax':
             self.classifier = nn.Linear(self.feature_dim, num_classes)

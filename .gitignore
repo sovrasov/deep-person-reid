@@ -3,6 +3,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 msmt17
+market1501
 # C extensions
 *.so
 
