@@ -130,7 +130,8 @@ def main():
         loss=args.loss.lower(),
         pretrained=(not args.no_pretrained),
         use_gpu=use_gpu,
-        dropout_prob=args.dropout_prob
+        dropout_prob=args.dropout_prob,
+        feature_dim=args.feature_dim
     )
     num_params, flops = compute_model_complexity(model, (1, 3, args.height, args.width))
     print('Model complexity: params={:,} flops={:,}'.format(num_params, flops))
