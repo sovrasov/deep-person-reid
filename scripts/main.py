@@ -146,7 +146,8 @@ def main():
         num_classes=datamanager.num_train_pids,
         loss=cfg.loss.name,
         pretrained=cfg.model.pretrained,
-        use_gpu=cfg.use_gpu
+        use_gpu=cfg.use_gpu,
+        dropout_prob=args.dropout_prob
     )
     num_params, flops = compute_model_complexity(model, (1, 3, cfg.data.height, cfg.data.width))
     print('Model complexity: params={:,} flops={:,}'.format(num_params, flops))

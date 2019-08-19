@@ -85,7 +85,8 @@ def show_avai_models():
     print(list(__model_factory.keys()))
 
 
-def build_model(name, num_classes, loss='softmax', pretrained=True, use_gpu=True):
+def build_model(name, num_classes, loss='softmax', pretrained=True,
+                use_gpu=True, dropout_prob=0.0):
     """A function wrapper for building a model.
 
     Args:
@@ -111,5 +112,6 @@ def build_model(name, num_classes, loss='softmax', pretrained=True, use_gpu=True
         num_classes=num_classes,
         loss=loss,
         pretrained=pretrained,
-        use_gpu=use_gpu
+        use_gpu=use_gpu,
+        dropout_prob=dropout_prob
     )
