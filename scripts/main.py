@@ -37,22 +37,20 @@ def build_engine(cfg, datamanager, model, optimizer, scheduler):
                 scheduler=scheduler,
                 use_gpu=cfg.use_gpu,
                 label_smooth=cfg.loss.softmax.label_smooth,
-                conf_penalty=args.conf_pen,
+                conf_penalty=cfg.conf_pen,
                 softmax_type='stock',
-                log_writer=log_writer
             )
-        elif args.loss == 'am_softmax':
+        elif cfg.loss.name == 'am_softmax':
             engine = torchreid.engine.ImageSoftmaxEngine(
                 datamanager,
                 model,
                 optimizer,
                 scheduler=scheduler,
                 use_gpu=cfg.use_gpu,
-                conf_penalty=args.conf_pen,
+                conf_penalty=cfg.conf_pen,
                 softmax_type='am',
-                m=args.m,
-                s=args.s,
-                log_writer=log_writer
+                m=cfg.m,
+                s=cfg.s,
             )
         else:
             engine = torchreid.engine.ImageTripletEngine(
@@ -148,7 +146,8 @@ def main():
         loss=cfg.loss.name,
         pretrained=cfg.model.pretrained,
         use_gpu=cfg.use_gpu,
-        dropout_prob=args.dropout_prob
+        dropout_prob=args.dropout_prob,
+        feature_dim=args.feature_dim
     )
     num_params, flops = compute_model_complexity(model, (1, 3, cfg.data.height, cfg.data.width))
     print('Model complexity: params={:,} flops={:,}'.format(num_params, flops))

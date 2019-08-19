@@ -145,6 +145,8 @@ def init_parser():
     # ************************************************************
     parser.add_argument('-a', '--arch', type=str, default='resnet50',
                         help='model architecture')
+    parser.add_argument('--feature-dim', type=int, default=256,
+                        help='dimension of the output embedding')
     parser.add_argument('--no-pretrained', action='store_true',
                         help='do not load pretrained weights')
 
