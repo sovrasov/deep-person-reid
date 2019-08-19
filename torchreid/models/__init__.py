@@ -86,7 +86,7 @@ def show_avai_models():
 
 
 def build_model(name, num_classes, loss='softmax', pretrained=True,
-                use_gpu=True, dropout_prob=0.0):
+                use_gpu=True, dropout_prob=0.0, feature_dim=512):
     """A function wrapper for building a model.
 
     Args:
@@ -113,5 +113,6 @@ def build_model(name, num_classes, loss='softmax', pretrained=True,
         loss=loss,
         pretrained=pretrained,
         use_gpu=use_gpu,
-        dropout_prob=dropout_prob
+        dropout_prob=dropout_prob,
+        feature_dim=feature_dim
     )
