@@ -147,8 +147,10 @@ class ChannelGate(nn.Module):
 class OSBlock(nn.Module):
     """Omni-scale feature learning block."""
 
-    def __init__(self, in_channels, out_channels, IN=False, bottleneck_reduction=4, **kwargs):
+    def __init__(self, in_channels, out_channels, IN=False, bottleneck_reduction=4,
+                 dropout_prob=0, **kwargs):
         super(OSBlock, self).__init__()
+        self.dropout_ratio = dropout_prob
         mid_channels = out_channels // bottleneck_reduction
         self.conv1 = Conv1x1(in_channels, mid_channels)
         self.conv2a = LightConv3x3(mid_channels, mid_channels)
@@ -187,6 +189,8 @@ class OSBlock(nn.Module):
         x3 = self.conv3(x2)
         if self.downsample is not None:
             residual = self.downsample(residual)
+        if self.dropout_ratio > 0:
+            x3 = F.dropout(x3, p=self.dropout_ratio, training=self.training, inplace=True)
         out = x3 + residual
         if self.IN is not None:
             out = self.IN(out)
@@ -214,9 +218,12 @@ class OSNet(nn.Module):
         # convolutional backbone
         self.conv1 = ConvLayer(3, channels[0], 7, stride=2, padding=3, IN=IN)
         self.maxpool = nn.MaxPool2d(3, stride=2, padding=1)
-        self.conv2 = self._make_layer(blocks[0], layers[0], channels[0], channels[1], reduce_spatial_size=True, IN=IN)
-        self.conv3 = self._make_layer(blocks[1], layers[1], channels[1], channels[2], reduce_spatial_size=True)
-        self.conv4 = self._make_layer(blocks[2], layers[2], channels[2], channels[3], reduce_spatial_size=False)
+        self.conv2 = self._make_layer(blocks[0], layers[0], channels[0], channels[1],
+                                      reduce_spatial_size=True, IN=IN, dropout_p=dropout_prob)
+        self.conv3 = self._make_layer(blocks[1], layers[1], channels[1], channels[2],
+                                      reduce_spatial_size=True, dropout_p=dropout_prob)
+        self.conv4 = self._make_layer(blocks[2], layers[2], channels[2], channels[3],
+                                      reduce_spatial_size=False, dropout_p=dropout_prob)
         self.conv5 = Conv1x1(channels[3], channels[3])
         self.global_avgpool = nn.AdaptiveAvgPool2d(1)
         # fully connected layer
@@ -230,12 +237,12 @@ class OSNet(nn.Module):
 
         self._init_params()
 
-    def _make_layer(self, block, layer, in_channels, out_channels, reduce_spatial_size, IN=False):
+    def _make_layer(self, block, layer, in_channels, out_channels, reduce_spatial_size, IN=False, dropout_p=0):
         layers = []
 
-        layers.append(block(in_channels, out_channels, IN=IN))
+        layers.append(block(in_channels, out_channels, IN=IN, dropout_prob=dropout_p))
         for i in range(1, layer):
-            layers.append(block(out_channels, out_channels, IN=IN))
+            layers.append(block(out_channels, out_channels, IN=IN, dropout_prob=dropout_p))
 
         if reduce_spatial_size:
             layers.append(
