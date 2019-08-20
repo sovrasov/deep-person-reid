@@ -25,6 +25,7 @@ import cv2 as cv
 
 
 parser = init_parser()
+parser.add_argument('--output_name', type=str, default='model')
 args = parser.parse_args()
 
 model = torchreid.models.build_model(
@@ -32,7 +33,8 @@ model = torchreid.models.build_model(
         num_classes=1041,
         loss=args.loss.lower(),
         pretrained=(not args.no_pretrained),
-        use_gpu=True
+        use_gpu=True,
+        feature_dim=args.feature_dim
     )
 load_pretrained_weights(model, args.load_weights)
 model.eval()
@@ -47,4 +49,5 @@ im = Image.fromarray(img)
 blob = transform(im).unsqueeze(0)
 
 
-torch.onnx.export(model, blob, 'model_3_1' + '.onnx', verbose=True, export_params=True)
+torch.onnx.export(model, blob, args.output_name + '.onnx',
+                  verbose=True, export_params=True)
