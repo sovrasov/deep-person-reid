@@ -152,6 +152,9 @@ class ImageSoftmaxEngine(engine.Engine):
                 eta_seconds = batch_time.avg * (num_batches-(batch_idx+1) + (max_epoch-(epoch+1))*num_batches)
                 eta_str = str(datetime.timedelta(seconds=int(eta_seconds)))
                 n_iter = len(trainloader) * epoch + batch_idx
+                info = self.criterion.get_last_info()
+                for k in info:
+                    self.log_writer.add_scalar('AUX info/' + k, info[k], n_iter)
                 self.log_writer.add_scalar('Loss/train', losses.val, n_iter)
                 self.log_writer.add_scalar('Accuracy/train', accs.val, n_iter)
                 self.log_writer.add_scalar('Learning rate', self.optimizer.param_groups[0]['lr'], n_iter)

@@ -75,6 +75,17 @@ def build_engine(cfg, datamanager, model, optimizer, scheduler):
                 conf_penalty=cfg.loss.softmax.conf_pen,
                 softmax_type='d_sm',
             )
+        elif args.loss == 'adacos':
+            engine = torchreid.engine.ImageSoftmaxEngine(
+                datamanager,
+                model,
+                optimizer,
+                scheduler=scheduler,
+                use_cpu=args.use_cpu,
+                conf_penalty=args.conf_pen,
+                softmax_type='ada',
+                log_writer=log_writer
+            )
         else:
             engine = torchreid.engine.ImageTripletEngine(
                 datamanager,
