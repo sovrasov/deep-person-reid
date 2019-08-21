@@ -58,6 +58,9 @@ class AMSoftmaxLoss(nn.Module):
         assert t >= 1
         self.t = t
 
+    def get_last_info(self):
+        return {}
+
     def forward(self, cos_theta, target):
         """
         Args:
