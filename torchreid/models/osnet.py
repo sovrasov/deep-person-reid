@@ -238,7 +238,7 @@ class OSNet(nn.Module):
         # fully connected layer
         self.fc = self._construct_fc_layer(feature_dim, channels[3], dropout_p=dropout_prob)
         # identity classification layer
-        if self.loss != 'am_softmax':
+        if self.loss not in ['am_softmax', 'adacos']:
             self.classifier = nn.Linear(self.feature_dim, num_classes)
         else:
             from torchreid.losses import AngleSimpleLinear
@@ -333,7 +333,7 @@ class OSNet(nn.Module):
         if not self.training:
             return v
         y = self.classifier(v)
-        if self.loss == 'softmax' or self.loss == 'am_softmax':
+        if self.loss in ['softmax', 'am_softmax', 'adacos']:
             return y
         elif self.loss == 'triplet':
             return y, v
