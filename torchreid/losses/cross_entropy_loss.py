@@ -36,6 +36,9 @@ class CrossEntropyLoss(nn.Module):
         self.logsoftmax = nn.LogSoftmax(dim=1)
         self.conf_penalty = conf_penalty
 
+    def get_last_info(self):
+        return {}
+
     def forward(self, inputs, targets):
         """
         Args:
