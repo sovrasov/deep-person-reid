@@ -9,7 +9,7 @@ def init_parser():
 
     parser.add_argument('--app', type=str, default='image', choices=['image', 'video'],
                         help='application')
-    parser.add_argument('--loss', type=str, default='softmax', choices=['softmax', 'triplet', 'am_softmax', 'adacos'],
+    parser.add_argument('--loss', type=str, default='softmax', choices=['softmax', 'triplet', 'am_softmax', 'adacos', 'd_softmax'],
                         help='methodology')
 
     # ************************************************************

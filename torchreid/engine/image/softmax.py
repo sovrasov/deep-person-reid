@@ -9,7 +9,7 @@ import torch
 
 import torchreid
 from torchreid.engine import engine
-from torchreid.losses import CrossEntropyLoss, AMSoftmaxLoss, AdaCosLoss
+from torchreid.losses import CrossEntropyLoss, AMSoftmaxLoss, AdaCosLoss, DSoftmaxLoss
 from torchreid.utils import AverageMeter, open_specified_layers, open_all_layers
 from torchreid import metrics
 
@@ -85,6 +85,12 @@ class ImageSoftmaxEngine(engine.Engine):
             )
         elif softmax_type == 'ada':
             self.criterion = AdaCosLoss(
+                num_classes=self.datamanager.num_train_pids,
+                use_gpu=self.use_gpu,
+                conf_penalty=conf_penalty
+            )
+        elif softmax_type == 'd_sm':
+            self.criterion = DSoftmaxLoss(
                 num_classes=self.datamanager.num_train_pids,
                 use_gpu=self.use_gpu,
                 conf_penalty=conf_penalty
