@@ -57,6 +57,7 @@ class AMSoftmaxLoss(nn.Module):
         self.th = math.cos(math.pi - m)
         assert t >= 1
         self.t = t
+        self.iter = 0
 
     def get_last_info(self):
         return {}
@@ -69,6 +70,9 @@ class AMSoftmaxLoss(nn.Module):
             targets (torch.LongTensor): ground truth labels with shape (batch_size).
                 Each position contains the label index.
         """
+        self.iter += 1
+        if self.iter + 1 %  40000 == 0:
+            self.s /= 2
 
         if self.margin_type == 'cos':
             phi_theta = cos_theta - self.m
