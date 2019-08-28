@@ -106,7 +106,7 @@ class Engine(object):
             return
 
         if self.writer is None:
-            self.writer = SummaryWriter(log_dir=save_dir)
+            self.writer = SummaryWriter(save_dir)
 
         if visactmap:
             self.visactmap(testloader, save_dir, self.datamanager.width, self.datamanager.height, print_freq)
