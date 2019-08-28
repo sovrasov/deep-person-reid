@@ -6,7 +6,6 @@ import argparse
 
 import torch
 import torch.nn as nn
-from tensorboardX import SummaryWriter
 
 from default_config import (
     get_default_config, imagedata_kwargs, videodata_kwargs,
@@ -75,27 +74,25 @@ def build_engine(cfg, datamanager, model, optimizer, scheduler):
                 conf_penalty=cfg.loss.softmax.conf_pen,
                 softmax_type='d_sm',
             )
-        elif args.loss == 'adacos':
+        elif cfg.loss.name == 'adacos':
             engine = torchreid.engine.ImageSoftmaxEngine(
                 datamanager,
                 model,
                 optimizer,
                 scheduler=scheduler,
-                use_cpu=args.use_cpu,
-                conf_penalty=args.conf_pen,
+                use_gpu=cfg.use_gpu,
+                conf_penalty=cfg.loss.softmax.conf_pen,
                 softmax_type='ada',
-                log_writer=log_writer
             )
-        elif args.loss == 'd_softmax':
+        elif cfg.loss.name == 'd_softmax':
             engine = torchreid.engine.ImageSoftmaxEngine(
                 datamanager,
                 model,
                 optimizer,
                 scheduler=scheduler,
-                use_cpu=args.use_cpu,
-                conf_penalty=args.conf_pen,
+                use_gpu=cfg.use_gpu,
+                conf_penalty=cfg.loss.softmax.conf_pen,
                 softmax_type='d_sm',
-                log_writer=log_writer
             )
         else:
             engine = torchreid.engine.ImageTripletEngine(
