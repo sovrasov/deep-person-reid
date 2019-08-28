@@ -1,13 +1,11 @@
 import sys
 import os
 import os.path as osp
-import warnings
 import time
 import argparse
 
 import torch
 import torch.nn as nn
-from tensorboardX import SummaryWriter
 
 from default_config import (
     get_default_config, imagedata_kwargs, videodata_kwargs,
@@ -37,7 +35,7 @@ def build_engine(cfg, datamanager, model, optimizer, scheduler):
                 scheduler=scheduler,
                 use_gpu=cfg.use_gpu,
                 label_smooth=cfg.loss.softmax.label_smooth,
-                conf_penalty=cfg.conf_pen,
+                conf_penalty=cfg.loss.softmax.conf_pen,
                 softmax_type='stock',
             )
         elif cfg.loss.name == 'am_softmax':
@@ -47,32 +45,30 @@ def build_engine(cfg, datamanager, model, optimizer, scheduler):
                 optimizer,
                 scheduler=scheduler,
                 use_gpu=cfg.use_gpu,
-                conf_penalty=cfg.conf_pen,
+                conf_penalty=cfg.loss.softmax.conf_pen,
                 softmax_type='am',
-                m=cfg.m,
-                s=cfg.s,
+                m=cfg.loss.softmax.m,
+                s=cfg.loss.softmax.s,
             )
-        elif args.loss == 'adacos':
+        elif cfg.loss.name == 'adacos':
             engine = torchreid.engine.ImageSoftmaxEngine(
                 datamanager,
                 model,
                 optimizer,
                 scheduler=scheduler,
-                use_cpu=args.use_cpu,
-                conf_penalty=args.conf_pen,
+                use_gpu=cfg.use_gpu,
+                conf_penalty=cfg.loss.softmax.conf_pen,
                 softmax_type='ada',
-                log_writer=log_writer
             )
-        elif args.loss == 'd_softmax':
+        elif cfg.loss.name == 'd_softmax':
             engine = torchreid.engine.ImageSoftmaxEngine(
                 datamanager,
                 model,
                 optimizer,
                 scheduler=scheduler,
-                use_cpu=args.use_cpu,
-                conf_penalty=args.conf_pen,
+                use_gpu=cfg.use_gpu,
+                conf_penalty=cfg.loss.softmax.conf_pen,
                 softmax_type='d_sm',
-                log_writer=log_writer
             )
         else:
             engine = torchreid.engine.ImageTripletEngine(
@@ -167,8 +163,8 @@ def main():
         loss=cfg.loss.name,
         pretrained=cfg.model.pretrained,
         use_gpu=cfg.use_gpu,
-        dropout_prob=args.dropout_prob,
-        feature_dim=args.feature_dim
+        dropout_prob=cfg.model.dropout_prob,
+        feature_dim=cfg.model.feature_dim
     )
     num_params, flops = compute_model_complexity(model, (1, 3, cfg.data.height, cfg.data.width))
     print('Model complexity: params={:,} flops={:,}'.format(num_params, flops))

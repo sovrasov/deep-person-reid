@@ -2,7 +2,7 @@ import torch
 import numpy as np
 from PIL import Image
 
-from default_parser import init_parser
+from deprecated.default_parser import init_parser
 from torchreid.data.transforms import build_transforms
 import torchreid
 from torchreid.utils import load_pretrained_weights

@@ -15,7 +15,7 @@ import torch
 import torch.nn as nn
 from torch.nn import functional as F
 import torchvision
-from torch.utils.tensorboard import SummaryWriter
+from tensorboardX import SummaryWriter
 
 import torchreid
 from torchreid.utils import AverageMeter, visualize_ranked_results, save_checkpoint, re_ranking, mkdir_if_missing
@@ -282,10 +282,10 @@ class Engine(object):
             g_camids,
             use_metric_cuhk03=use_metric_cuhk03
         )
-        if self.log_writer is not None:
-            self.log_writer.add_scalar('Val/mAP', mAP, iteration)
+        if self.writer is not None:
+            self.writer.add_scalar('Val/mAP', mAP, iteration)
             for r in ranks:
-                self.log_writer.add_scalar('Val/Rank-' + str(r), cmc[r - 1], iteration)
+                self.writer.add_scalar('Val/Rank-' + str(r), cmc[r - 1], iteration)
 
         print('** Results **')
         print('mAP: {:.1%}'.format(mAP))
