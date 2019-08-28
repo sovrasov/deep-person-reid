@@ -11,6 +11,8 @@ def get_default_config():
     cfg.model.pretrained = True # automatically load pretrained model weights if available
     cfg.model.load_weights = '' # path to model weights
     cfg.model.resume = '' # path to checkpoint for resume training
+    cfg.model.dropout_prob = 0.0
+    cfg.model.feature_dim = 512
 
     # data
     cfg.data = CN()
@@ -27,7 +29,7 @@ def get_default_config():
     cfg.data.norm_mean = [0.485, 0.456, 0.406] # default is imagenet mean
     cfg.data.norm_std = [0.229, 0.224, 0.225] # default is imagenet std
     cfg.data.save_dir = 'log' # path to save log
-    
+
     # specific datasets
     cfg.market1501 = CN()
     cfg.market1501.use_500k_distractors = False # add 500k distractors to the gallery set for market1501
@@ -35,7 +37,7 @@ def get_default_config():
     cfg.cuhk03.labeled_images = False # use labeled images, if False, use detected images
     cfg.cuhk03.classic_split = False # use classic split by Li et al. CVPR14
     cfg.cuhk03.use_metric_cuhk03 = False # use cuhk03's metric for evaluation
-    
+
     # sampler
     cfg.sampler = CN()
     cfg.sampler.train_sampler = 'RandomSampler'
@@ -82,6 +84,9 @@ def get_default_config():
     cfg.loss.name = 'softmax'
     cfg.loss.softmax = CN()
     cfg.loss.softmax.label_smooth = True # use label smoothing regularizer
+    cfg.loss.softmax.conf_pen = False # penalize confidence via entropy subtraction
+    cfg.loss.softmax.m = 0.35
+    cfg.loss.softmax.s = 30
     cfg.loss.triplet = CN()
     cfg.loss.triplet.margin = 0.3 # distance margin
     cfg.loss.triplet.weight_t =1. # weight to balance hard triplet loss
