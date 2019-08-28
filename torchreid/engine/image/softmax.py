@@ -64,10 +64,8 @@ class ImageSoftmaxEngine(engine.Engine):
 
     def __init__(self, datamanager, model, optimizer, scheduler=None, use_gpu=False,
                  softmax_type='stock', label_smooth=True, conf_penalty=False,
-                 m=0.35, s=10, log_writer=None):
+                 m=0.35, s=10):
         super(ImageSoftmaxEngine, self).__init__(datamanager, model, optimizer, scheduler, use_gpu)
-
-        self.log_writer = log_writer
 
         if softmax_type == 'stock':
             self.criterion = CrossEntropyLoss(
@@ -134,13 +132,6 @@ class ImageSoftmaxEngine(engine.Engine):
                 # estimate remaining time
                 eta_seconds = batch_time.avg * (num_batches-(batch_idx+1) + (max_epoch-(epoch+1))*num_batches)
                 eta_str = str(datetime.timedelta(seconds=int(eta_seconds)))
-                n_iter = len(trainloader) * epoch + batch_idx
-                info = self.criterion.get_last_info()
-                for k in info:
-                    self.log_writer.add_scalar('AUX info/' + k, info[k], n_iter)
-                self.log_writer.add_scalar('Loss/train', losses.val, n_iter)
-                self.log_writer.add_scalar('Accuracy/train', accs.val, n_iter)
-                self.log_writer.add_scalar('Learning rate', self.optimizer.param_groups[0]['lr'], n_iter)
                 print('Epoch: [{0}/{1}][{2}/{3}]\t'
                       'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
                       'Data {data_time.val:.3f} ({data_time.avg:.3f})\t'
@@ -158,17 +149,17 @@ class ImageSoftmaxEngine(engine.Engine):
                     )
                 )
 
-<<<<<<< 89f3c31d9198eeb02628cefdf2367a35f22fa524
-            if self.writer is not None:
-                n_iter = epoch * num_batches + batch_idx
-                self.writer.add_scalar('Train/Time', batch_time.avg, n_iter)
-                self.writer.add_scalar('Train/Data', data_time.avg, n_iter)
-                self.writer.add_scalar('Train/Loss', losses.avg, n_iter)
-                self.writer.add_scalar('Train/Acc', accs.avg, n_iter)
-                self.writer.add_scalar('Train/Lr', self.optimizer.param_groups[0]['lr'], n_iter)
+                if self.writer is not None:
+                    n_iter = epoch * num_batches + batch_idx
+                    self.writer.add_scalar('Train/Time', batch_time.avg, n_iter)
+                    self.writer.add_scalar('Train/Data', data_time.avg, n_iter)
+                    info = self.criterion.get_last_info()
+                    for k in info:
+                        self.writer.add_scalar('AUX info/' + k, info[k], n_iter)
+                    self.writer.add_scalar('Loss/train', losses.avg, n_iter)
+                    self.writer.add_scalar('Accuracy/train', accs.avg, n_iter)
+                    self.writer.add_scalar('Learning rate', self.optimizer.param_groups[0]['lr'], n_iter)
 
-=======
->>>>>>> Add am-softmax
             end = time.time()
 
         if self.scheduler is not None:
