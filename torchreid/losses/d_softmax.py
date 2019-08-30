@@ -11,10 +11,9 @@
  limitations under the License.
 """
 
-import math
-
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 
 class DSoftmaxLoss(nn.Module):
@@ -24,6 +23,8 @@ class DSoftmaxLoss(nn.Module):
         super(DSoftmaxLoss, self).__init__()
         self.s = s
         self.eps = self.s * d
+        self.conf_penalty = conf_penalty
+        self.logsoftmax = nn.LogSoftmax(dim=1)
 
     def get_last_info(self):
         return {}
@@ -39,5 +40,14 @@ class DSoftmaxLoss(nn.Module):
         loss_intra = torch.log(1 + self.eps / target_z)
         loss_inter = torch.log(1 + non_target_z)
         loss = loss_intra + loss_inter
+
+        if self.conf_penalty:
+            log_probs = self.logsoftmax(self.s * cos_theta)
+            probs = torch.exp(log_probs)
+            ent = (-probs*torch.log(probs.clamp(min=1e-12))).sum(1)
+            loss = F.relu(loss - 0.2 * ent)
+            with torch.no_grad():
+                nonzero_count = loss.nonzero().size(0)
+            return loss.sum() / nonzero_count
 
         return loss.mean()
