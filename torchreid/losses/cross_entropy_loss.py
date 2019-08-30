@@ -51,10 +51,14 @@ class CrossEntropyLoss(nn.Module):
         targets = torch.zeros(log_probs.size()).scatter_(1, targets.unsqueeze(1).data.cpu(), 1)
         if self.use_gpu: targets = targets.cuda()
         targets = (1 - self.epsilon) * targets + self.epsilon / self.num_classes
-        sm_loss = (- targets * log_probs).mean(0).sum()
+        sm_loss = (- targets * log_probs).sum(1)
+
         if self.conf_penalty:
             probs = torch.exp(log_probs)
-            ent = (-probs*torch.log(probs.clamp(min=1e-12))).sum(1).mean(0)
-            return nn.functional.relu(5 * sm_loss - 0.085 * ent)
+            ent = (-probs*torch.log(probs.clamp(min=1e-12))).sum(1)
+            loss = nn.functional.relu(5 * sm_loss - 0.085 * ent)  # values are taken from the paper Rethinking reid with confidence
+            with torch.no_grad():
+                nonzero_count = loss.nonzero().size(0)
+            return loss.sum() / nonzero_count
 
-        return sm_loss
+        return sm_loss.mean(0)
