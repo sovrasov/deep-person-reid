@@ -84,7 +84,7 @@ def get_default_config():
     cfg.loss.name = 'softmax'
     cfg.loss.softmax = CN()
     cfg.loss.softmax.label_smooth = True # use label smoothing regularizer
-    cfg.loss.softmax.conf_pen = False # penalize confidence via entropy subtraction
+    cfg.loss.softmax.conf_pen = 0.0
     cfg.loss.softmax.m = 0.35
     cfg.loss.softmax.s = 30
     cfg.loss.triplet = CN()
