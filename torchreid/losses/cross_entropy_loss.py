@@ -28,7 +28,7 @@ class CrossEntropyLoss(nn.Module):
         label_smooth (bool, optional): whether to apply label smoothing. Default is True.
     """
 
-    def __init__(self, num_classes, epsilon=0.1, use_gpu=True, label_smooth=True, conf_penalty=False):
+    def __init__(self, num_classes, epsilon=0.1, use_gpu=True, label_smooth=True, conf_penalty=0.):
         super(CrossEntropyLoss, self).__init__()
         self.num_classes = num_classes
         self.epsilon = epsilon if label_smooth else 0
@@ -53,7 +53,7 @@ class CrossEntropyLoss(nn.Module):
         targets = (1 - self.epsilon) * targets + self.epsilon / self.num_classes
         sm_loss = (- targets * log_probs).sum(1)
 
-        if self.conf_penalty:
+        if self.conf_penalty > 0.:
             probs = torch.exp(log_probs)
             ent = (-probs*torch.log(probs.clamp(min=1e-12))).sum(1)
             loss = nn.functional.relu(5 * sm_loss - 0.085 * ent)  # values are taken from the paper Rethinking reid with confidence
