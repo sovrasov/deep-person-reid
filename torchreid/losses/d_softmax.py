@@ -19,7 +19,7 @@ import torch.nn.functional as F
 class DSoftmaxLoss(nn.Module):
     """Computes the D-Softmax loss https://arxiv.org/pdf/1908.01281.pdf"""
 
-    def __init__(self, num_classes=2, s=30., d=0.9, use_gpu=True, conf_penalty=False):
+    def __init__(self, num_classes=2, s=30., d=0.9, use_gpu=True, conf_penalty=0.):
         super(DSoftmaxLoss, self).__init__()
         self.s = s
         self.eps = self.s * d
@@ -41,11 +41,11 @@ class DSoftmaxLoss(nn.Module):
         loss_inter = torch.log(1 + non_target_z)
         loss = loss_intra + loss_inter
 
-        if self.conf_penalty:
+        if self.conf_penalty > 0.:
             log_probs = self.logsoftmax(self.s * cos_theta)
             probs = torch.exp(log_probs)
             ent = (-probs*torch.log(probs.clamp(min=1e-12))).sum(1)
-            loss = F.relu(loss - 0.2 * ent)
+            loss = F.relu(loss - self.conf_penalty * ent)
             with torch.no_grad():
                 nonzero_count = loss.nonzero().size(0)
             return loss.sum() / nonzero_count

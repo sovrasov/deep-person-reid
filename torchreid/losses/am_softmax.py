@@ -36,7 +36,7 @@ class AMSoftmaxLoss(nn.Module):
     margin_types = ['cos', 'arc']
 
     def __init__(self, num_classes, epsilon=0.1, use_gpu=True,
-                 conf_penalty=False,
+                 conf_penalty=0.,
                  margin_type='cos', gamma=0., m=0.5, s=30, t=1.):
         super(AMSoftmaxLoss, self).__init__()
         self.num_classes = num_classes
@@ -82,12 +82,12 @@ class AMSoftmaxLoss(nn.Module):
         output = torch.where(index, phi_theta, cos_theta)
 
         if self.gamma == 0 and self.t == 1.:
-            if self.conf_penalty:
+            if self.conf_penalty > 0.:
                 output *= self.s
                 log_probs = self.logsoftmax(output)
                 probs = torch.exp(log_probs)
                 ent = (-probs*torch.log(probs.clamp(min=1e-12))).sum(1)
-                loss = F.relu(F.cross_entropy(output, target, reduction='none') - 0.2 * ent)
+                loss = F.relu(F.cross_entropy(output, target, reduction='none') - self.conf_penalty * ent)
                 with torch.no_grad():
                     nonzero_count = loss.nonzero().size(0)
                 return loss.sum() / nonzero_count
