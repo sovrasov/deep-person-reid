@@ -13,10 +13,7 @@ def get_default_config():
     cfg.model.resume = '' # path to checkpoint for resume training
     cfg.model.dropout_prob = 0.0
     cfg.model.feature_dim = 512
-<<<<<<< ce7bdf539f66c328b4fa1485bd48971db3b3a5fb
     cfg.model.activation = 'relu'
-=======
->>>>>>> Update code to use configs
 
     # data
     cfg.data = CN()
@@ -88,11 +85,7 @@ def get_default_config():
     cfg.loss.name = 'softmax'
     cfg.loss.softmax = CN()
     cfg.loss.softmax.label_smooth = True # use label smoothing regularizer
-<<<<<<< ce7bdf539f66c328b4fa1485bd48971db3b3a5fb
     cfg.loss.softmax.conf_pen = 0.0
-=======
-    cfg.loss.softmax.conf_pen = False # penalize confidence via entropy subtraction
->>>>>>> Update code to use configs
     cfg.loss.softmax.m = 0.35
     cfg.loss.softmax.s = 30
     cfg.loss.triplet = CN()
