@@ -30,7 +30,7 @@ class ImageTripletEngine(engine.Engine):
         label_smooth (bool, optional): use label smoothing regularizer. Default is True.
 
     Examples::
-        
+
         import torch
         import torchreid
         datamanager = torchreid.data.ImageDataManager(
@@ -66,16 +66,16 @@ class ImageTripletEngine(engine.Engine):
             save_dir='log/resnet50-triplet-market1501',
             print_freq=10
         )
-    """   
+    """
 
-    def __init__(self, datamanager, model, optimizer, margin=0.3,
+    def __init__(self, datamanager, model, optimizer, reg_cfg, margin=0.3,
                  weight_t=1, weight_x=1, scheduler=None, use_gpu=True,
                  label_smooth=True):
-        super(ImageTripletEngine, self).__init__(datamanager, model, optimizer, scheduler, use_gpu)
+        super(ImageTripletEngine, self).__init__(datamanager, model, reg_cfg, optimizer, scheduler, use_gpu)
 
         self.weight_t = weight_t
         self.weight_x = weight_x
-        
+
         self.criterion_t = TripletLoss(margin=margin)
         self.criterion_x = CrossEntropyLoss(
             num_classes=self.datamanager.num_train_pids,
@@ -106,7 +106,7 @@ class ImageTripletEngine(engine.Engine):
             if self.use_gpu:
                 imgs = imgs.cuda()
                 pids = pids.cuda()
-            
+
             self.optimizer.zero_grad()
             outputs, features = self.model(imgs)
             loss_t = self._compute_loss(self.criterion_t, features, pids)
@@ -152,7 +152,7 @@ class ImageTripletEngine(engine.Engine):
                 self.writer.add_scalar('Train/Loss_x', losses_x.avg, n_iter)
                 self.writer.add_scalar('Train/Acc', accs.avg, n_iter)
                 self.writer.add_scalar('Train/Lr', self.optimizer.param_groups[0]['lr'], n_iter)
-            
+
             end = time.time()
 
         if self.scheduler is not None:
