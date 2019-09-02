@@ -19,7 +19,7 @@ from tensorboardX import SummaryWriter
 
 import torchreid
 from torchreid.utils import AverageMeter, visualize_ranked_results, save_checkpoint, re_ranking, mkdir_if_missing
-from torchreid.losses import DeepSupervision
+from torchreid.losses import DeepSupervision, get_regularizer
 from torchreid import metrics
 
 
@@ -38,13 +38,14 @@ class Engine(object):
         use_gpu (bool, optional): use gpu. Default is True.
     """
 
-    def __init__(self, datamanager, model, optimizer=None, scheduler=None, use_gpu=True):
+    def __init__(self, datamanager, model, reg_cfg, optimizer=None, scheduler=None, use_gpu=True):
         self.datamanager = datamanager
         self.model = model
         self.optimizer = optimizer
         self.scheduler = scheduler
         self.use_gpu = (torch.cuda.is_available() and use_gpu)
         self.writer = None
+        self.regularizer = get_regularizer(reg_cfg)
 
         # check attributes
         if not isinstance(self.model, nn.Module):

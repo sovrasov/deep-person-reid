@@ -62,10 +62,10 @@ class ImageSoftmaxEngine(engine.Engine):
         )
     """
 
-    def __init__(self, datamanager, model, optimizer, scheduler=None, use_gpu=False,
+    def __init__(self, datamanager, model, optimizer, reg_cfg, scheduler=None, use_gpu=False,
                  softmax_type='stock', label_smooth=True, conf_penalty=False,
                  m=0.35, s=10):
-        super(ImageSoftmaxEngine, self).__init__(datamanager, model, optimizer, scheduler, use_gpu)
+        super(ImageSoftmaxEngine, self).__init__(datamanager, model, reg_cfg, optimizer, scheduler, use_gpu)
 
         if softmax_type == 'stock':
             self.criterion = CrossEntropyLoss(
@@ -96,6 +96,7 @@ class ImageSoftmaxEngine(engine.Engine):
 
     def train(self, epoch, max_epoch, trainloader, fixbase_epoch=0, open_layers=None, print_freq=10):
         losses = AverageMeter()
+        reg_ow_loss = AverageMeter()
         accs = AverageMeter()
         batch_time = AverageMeter()
         data_time = AverageMeter()
@@ -120,6 +121,12 @@ class ImageSoftmaxEngine(engine.Engine):
             self.optimizer.zero_grad()
             outputs = self.model(imgs)
             loss = self._compute_loss(self.criterion, outputs, pids)
+
+            if (epoch+1) > fixbase_epoch:
+                reg_loss = self.regularizer(self.model)
+                reg_ow_loss.update(reg_loss.item(), pids.size(0))
+                loss += reg_loss
+
             loss.backward()
             self.optimizer.step()
 
@@ -157,6 +164,8 @@ class ImageSoftmaxEngine(engine.Engine):
                     for k in info:
                         self.writer.add_scalar('AUX info/' + k, info[k], n_iter)
                     self.writer.add_scalar('Loss/train', losses.avg, n_iter)
+                    if (epoch+1) > fixbase_epoch:
+                        self.writer.add_scalar('Loss/reg_ow', reg_ow_loss.avg, n_iter)
                     self.writer.add_scalar('Accuracy/train', accs.avg, n_iter)
                     self.writer.add_scalar('Learning rate', self.optimizer.param_groups[0]['lr'], n_iter)
 
