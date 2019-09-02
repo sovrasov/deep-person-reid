@@ -89,6 +89,7 @@ def build_engine(cfg, datamanager, model, optimizer, scheduler):
                 datamanager,
                 model,
                 optimizer,
+                cfg.reg,
                 scheduler=scheduler,
                 use_gpu=cfg.use_gpu,
                 conf_penalty=cfg.loss.softmax.conf_pen,
