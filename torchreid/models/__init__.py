@@ -85,8 +85,12 @@ def show_avai_models():
     print(list(__model_factory.keys()))
 
 
+ACT_MAP = {'relu': torch.nn.ReLU,
+           'prelu': torch.nn.PReLU}
+
+
 def build_model(name, num_classes, loss='softmax', pretrained=True,
-                use_gpu=True, dropout_prob=0.0, feature_dim=512):
+                use_gpu=True, dropout_prob=0.0, feature_dim=512, activation='relu'):
     """A function wrapper for building a model.
 
     Args:
@@ -114,5 +118,6 @@ def build_model(name, num_classes, loss='softmax', pretrained=True,
         pretrained=pretrained,
         use_gpu=use_gpu,
         dropout_prob=dropout_prob,
-        feature_dim=feature_dim
+        feature_dim=feature_dim,
+        activation=ACT_MAP[activation],
     )

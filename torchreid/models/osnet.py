@@ -18,13 +18,24 @@ pretrained_urls = {
 }
 
 
+def make_activation(activation):
+    """Factory for activation functions"""
+    if activation != nn.PReLU:
+        return activation(inplace=True)
+    elif activation == nn.PReLU:
+        return activation(num_parameters=1, init=0)
+
+    return activation()
+
+
 ##########
 # Basic layers
 ##########
 class ConvLayer(nn.Module):
     """Convolution layer (conv + bn + relu)."""
 
-    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, groups=1, IN=False):
+    def __init__(self, in_channels, out_channels, kernel_size, stride=1,
+                 padding=0, groups=1, IN=False, activation=nn.ReLU):
         super(ConvLayer, self).__init__()
         self.conv = nn.Conv2d(in_channels, out_channels, kernel_size, stride=stride,
                               padding=padding, bias=False, groups=groups)
@@ -32,7 +43,7 @@ class ConvLayer(nn.Module):
             self.bn = nn.InstanceNorm2d(out_channels, affine=True)
         else:
             self.bn = nn.BatchNorm2d(out_channels)
-        self.relu = nn.ReLU(inplace=True)
+        self.relu = make_activation(activation)
 
     def forward(self, x):
         x = self.conv(x)
@@ -44,12 +55,12 @@ class ConvLayer(nn.Module):
 class Conv1x1(nn.Module):
     """1x1 convolution + bn + relu."""
 
-    def __init__(self, in_channels, out_channels, stride=1, groups=1):
+    def __init__(self, in_channels, out_channels, stride=1, groups=1, activation=nn.ReLU):
         super(Conv1x1, self).__init__()
         self.conv = nn.Conv2d(in_channels, out_channels, 1, stride=stride, padding=0,
                               bias=False, groups=groups)
         self.bn = nn.BatchNorm2d(out_channels)
-        self.relu = nn.ReLU(inplace=True)
+        self.relu = make_activation(activation)
 
     def forward(self, x):
         x = self.conv(x)
@@ -75,12 +86,12 @@ class Conv1x1Linear(nn.Module):
 class Conv3x3(nn.Module):
     """3x3 convolution + bn + relu."""
 
-    def __init__(self, in_channels, out_channels, stride=1, groups=1):
+    def __init__(self, in_channels, out_channels, stride=1, groups=1, activation=nn.ReLU):
         super(Conv3x3, self).__init__()
         self.conv = nn.Conv2d(in_channels, out_channels, 3, stride=stride, padding=1,
                               bias=False, groups=groups)
         self.bn = nn.BatchNorm2d(out_channels)
-        self.relu = nn.ReLU(inplace=True)
+        self.relu = make_activation(activation)
 
     def forward(self, x):
         x = self.conv(x)
@@ -95,12 +106,12 @@ class LightConv3x3(nn.Module):
     1x1 (linear) + dw 3x3 (nonlinear).
     """
 
-    def __init__(self, in_channels, out_channels):
+    def __init__(self, in_channels, out_channels, activation=nn.ReLU):
         super(LightConv3x3, self).__init__()
         self.conv1 = nn.Conv2d(in_channels, out_channels, 1, stride=1, padding=0, bias=False)
         self.conv2 = nn.Conv2d(out_channels, out_channels, 3, stride=1, padding=1, bias=False, groups=out_channels)
         self.bn = nn.BatchNorm2d(out_channels)
-        self.relu = nn.ReLU(inplace=True)
+        self.relu = make_activation(activation)
 
     def forward(self, x):
         x = self.conv1(x)
@@ -157,26 +168,26 @@ class OSBlock(nn.Module):
     """Omni-scale feature learning block."""
 
     def __init__(self, in_channels, out_channels, IN=False, bottleneck_reduction=4,
-                 dropout_prob=0, **kwargs):
+                 dropout_prob=0, activation=nn.ReLU, **kwargs):
         super(OSBlock, self).__init__()
         self.dropout_ratio = dropout_prob
         mid_channels = out_channels // bottleneck_reduction
-        self.conv1 = Conv1x1(in_channels, mid_channels)
-        self.conv2a = LightConv3x3(mid_channels, mid_channels)
+        self.conv1 = Conv1x1(in_channels, mid_channels, activation=activation)
+        self.conv2a = LightConv3x3(mid_channels, mid_channels, activation=activation)
         self.conv2b = nn.Sequential(
-            LightConv3x3(mid_channels, mid_channels),
-            LightConv3x3(mid_channels, mid_channels),
+            LightConv3x3(mid_channels, mid_channels, activation=activation),
+            LightConv3x3(mid_channels, mid_channels, activation=activation),
         )
         self.conv2c = nn.Sequential(
-            LightConv3x3(mid_channels, mid_channels),
-            LightConv3x3(mid_channels, mid_channels),
-            LightConv3x3(mid_channels, mid_channels),
+            LightConv3x3(mid_channels, mid_channels, activation=activation),
+            LightConv3x3(mid_channels, mid_channels, activation=activation),
+            LightConv3x3(mid_channels, mid_channels, activation=activation),
         )
         self.conv2d = nn.Sequential(
-            LightConv3x3(mid_channels, mid_channels),
-            LightConv3x3(mid_channels, mid_channels),
-            LightConv3x3(mid_channels, mid_channels),
-            LightConv3x3(mid_channels, mid_channels),
+            LightConv3x3(mid_channels, mid_channels, activation=activation),
+            LightConv3x3(mid_channels, mid_channels, activation=activation),
+            LightConv3x3(mid_channels, mid_channels, activation=activation),
+            LightConv3x3(mid_channels, mid_channels, activation=activation),
         )
         self.gate = ChannelGate(mid_channels)
         self.conv3 = Conv1x1Linear(mid_channels, out_channels)
@@ -186,6 +197,7 @@ class OSBlock(nn.Module):
         self.IN = None
         if IN:
             self.IN = nn.InstanceNorm2d(out_channels, affine=True)
+        self.relu = make_activation(activation)
 
     def forward(self, x):
         identity = x
@@ -203,7 +215,7 @@ class OSBlock(nn.Module):
         out = x3 + identity
         if self.IN is not None:
             out = self.IN(out)
-        return F.relu(out)
+        return self.relu(out)
 
 
 ##########
@@ -219,11 +231,13 @@ class OSNet(nn.Module):
     """
 
     def __init__(self, num_classes, blocks, layers, channels, feature_dim=256,
-                 loss='softmax', IN=False, dropout_prob=0, **kwargs):
+                 loss='softmax', IN=False, dropout_prob=0, activation=nn.ReLU, **kwargs):
         super(OSNet, self).__init__()
+        print(activation)
         num_blocks = len(blocks)
         assert num_blocks == len(layers)
         assert num_blocks == len(channels) - 1
+        self.activation = activation
         self.loss = loss
 
         # convolutional backbone
@@ -251,14 +265,14 @@ class OSNet(nn.Module):
     def _make_layer(self, block, layer, in_channels, out_channels, reduce_spatial_size, IN=False, dropout_p=0):
         layers = []
 
-        layers.append(block(in_channels, out_channels, IN=IN, dropout_prob=dropout_p))
+        layers.append(block(in_channels, out_channels, IN=IN, dropout_prob=dropout_p, activation=self.activation))
         for i in range(1, layer):
-            layers.append(block(out_channels, out_channels, IN=IN, dropout_prob=dropout_p))
+            layers.append(block(out_channels, out_channels, IN=IN, dropout_prob=dropout_p, activation=self.activation))
 
         if reduce_spatial_size:
             layers.append(
                 nn.Sequential(
-                    Conv1x1(out_channels, out_channels),
+                    Conv1x1(out_channels, out_channels, activation=self.activation),
                     nn.AvgPool2d(2, stride=2)
                 )
             )
