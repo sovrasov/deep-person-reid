@@ -233,7 +233,6 @@ class OSNet(nn.Module):
     def __init__(self, num_classes, blocks, layers, channels, feature_dim=256,
                  loss='softmax', IN=False, dropout_prob=0, activation=nn.ReLU, **kwargs):
         super(OSNet, self).__init__()
-        print(activation)
         num_blocks = len(blocks)
         assert num_blocks == len(layers)
         assert num_blocks == len(channels) - 1
@@ -332,7 +331,7 @@ class OSNet(nn.Module):
         x = self.conv5(x)
         return x
 
-    def forward(self, x, return_featuremaps=False):
+    def forward(self, x, return_featuremaps=False, get_of_outputs=False):
         x = self.featuremaps(x)
         if return_featuremaps:
             return x
@@ -350,6 +349,8 @@ class OSNet(nn.Module):
             return v
         y = self.classifier(v)
         if self.loss in ['softmax', 'am_softmax', 'adacos', 'd_softmax']:
+            if get_of_outputs:
+                return y, [x]
             return y
         elif self.loss == 'triplet':
             return y, v

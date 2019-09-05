@@ -19,7 +19,7 @@ from tensorboardX import SummaryWriter
 
 import torchreid
 from torchreid.utils import AverageMeter, visualize_ranked_results, save_checkpoint, re_ranking, mkdir_if_missing
-from torchreid.losses import DeepSupervision, get_regularizer
+from torchreid.losses import DeepSupervision, get_regularizer, OFPenalty
 from torchreid import metrics
 
 
@@ -46,6 +46,10 @@ class Engine(object):
         self.use_gpu = (torch.cuda.is_available() and use_gpu)
         self.writer = None
         self.regularizer = get_regularizer(reg_cfg)
+        if reg_cfg.of:
+            self.of_regularizer = OFPenalty(reg_cfg.of_beta)
+        else:
+            self.of_regularizer = None
 
         # check attributes
         if not isinstance(self.model, nn.Module):

@@ -97,6 +97,7 @@ class ImageSoftmaxEngine(engine.Engine):
     def train(self, epoch, max_epoch, trainloader, fixbase_epoch=0, open_layers=None, print_freq=10):
         losses = AverageMeter()
         reg_ow_loss = AverageMeter()
+        reg_of_loss = AverageMeter()
         accs = AverageMeter()
         batch_time = AverageMeter()
         data_time = AverageMeter()
@@ -119,13 +120,19 @@ class ImageSoftmaxEngine(engine.Engine):
                 pids = pids.cuda()
 
             self.optimizer.zero_grad()
-            outputs = self.model(imgs)
+            if self.regularizer:
+                outputs, feature_maps = self.model(imgs, get_of_outputs=True)
+            else:
+                outputs = self.model(imgs)
+                feature_maps = []
             loss = self._compute_loss(self.criterion, outputs, pids)
 
             if (epoch+1) > fixbase_epoch:
+                of_reg_loss = self.of_regularizer(feature_maps)
                 reg_loss = self.regularizer(self.model)
                 reg_ow_loss.update(reg_loss.item(), pids.size(0))
-                loss += reg_loss
+                reg_of_loss.update(of_reg_loss.item(), pids.size(0))
+                loss += reg_loss + of_reg_loss
 
             loss.backward()
             self.optimizer.step()
@@ -164,8 +171,8 @@ class ImageSoftmaxEngine(engine.Engine):
                     for k in info:
                         self.writer.add_scalar('AUX info/' + k, info[k], n_iter)
                     self.writer.add_scalar('Loss/train', losses.avg, n_iter)
-                    if (epoch+1) > fixbase_epoch:
-                        self.writer.add_scalar('Loss/reg_ow', reg_ow_loss.avg, n_iter)
+                    self.writer.add_scalar('Loss/reg_ow', reg_ow_loss.avg, n_iter)
+                    self.writer.add_scalar('Loss/reg_of', reg_of_loss.avg, n_iter)
                     self.writer.add_scalar('Accuracy/train', accs.avg, n_iter)
                     self.writer.add_scalar('Learning rate', self.optimizer.param_groups[0]['lr'], n_iter)
 

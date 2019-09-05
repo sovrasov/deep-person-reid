@@ -83,16 +83,12 @@ def get_regularizer(cfg_reg):
 
 class OFPenalty(nn.Module):
 
-    _WARNED = False
-
-    def __init__(self, args):
+    def __init__(self, beta, layers_list=[]):
         super().__init__()
-
-        self.penalty_position = frozenset(args['of_position'])
-        self.beta = args['of_beta']
+        self.penalty_position = frozenset(layers_list)
+        self.beta = beta
 
     def dominant_eigenvalue(self, A):
-
         B, N, _ = A.size()
         x = torch.randn(B, N, 1, device='cuda')
 
@@ -108,7 +104,6 @@ class OFPenalty(nn.Module):
         return numerator / denominator
 
     def get_singular_values(self, A):
-
         AAT = torch.bmm(A, A.permute(0, 2, 1))
         B, N, _ = AAT.size()
         largest = self.dominant_eigenvalue(AAT)
@@ -132,23 +127,8 @@ class OFPenalty(nn.Module):
         if k == 'intermediate':
             singular_penalty *= 0.01
 
-        return singular_penalty.sum() / (x.size(0) / 32.)  # Quirk: normalize to 32-batch case
+        return singular_penalty.sum() / (x.size(0))
 
     def forward(self, inputs):
-
-        _, y, _, feature_dict = inputs
-
-        #logger.debug(str(self.penalty_position))
-
-        existed_positions = frozenset(feature_dict.keys())
-        missing = self.penalty_position - existed_positions
-        if missing and not self._WARNED:
-            self._WARNED = True
-
-            import warnings
-            warnings.warn('OF positions {!r} are missing. IGNORED.'.format(list(missing)))
-
-        singular_penalty = sum([self.apply_penalty(k, x) for k, x in feature_dict.items() if k in self.penalty_position])
-
-        #logger.debug(str(singular_penalty))
+        singular_penalty = sum([self.apply_penalty(' ', x) for x in inputs])
         return singular_penalty
