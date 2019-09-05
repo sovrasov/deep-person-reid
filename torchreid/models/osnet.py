@@ -233,7 +233,6 @@ class OSNet(nn.Module):
     def __init__(self, num_classes, blocks, layers, channels, feature_dim=256,
                  loss='softmax', IN=False, dropout_prob=0, activation=nn.ReLU, **kwargs):
         super(OSNet, self).__init__()
-        print(activation)
         num_blocks = len(blocks)
         assert num_blocks == len(layers)
         assert num_blocks == len(channels) - 1
