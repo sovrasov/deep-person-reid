@@ -130,11 +130,11 @@ class ImageSoftmaxEngine(engine.Engine):
             if (epoch+1) > fixbase_epoch:
                 if self.of_regularizer:
                     of_reg_loss = self.of_regularizer(feature_maps)
+                    reg_of_loss.update(of_reg_loss.item(), pids.size(0))
                 else:
                     of_reg_loss = 0
                 reg_loss = self.regularizer(self.model)
                 reg_ow_loss.update(reg_loss.item(), pids.size(0))
-                reg_of_loss.update(of_reg_loss.item(), pids.size(0))
                 loss += reg_loss + of_reg_loss
 
             loss.backward()
