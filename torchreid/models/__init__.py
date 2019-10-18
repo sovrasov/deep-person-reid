@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from functools import partial
 
 import torch
 
@@ -67,7 +68,9 @@ __model_factory = {
     'mlfn': mlfn,
     'osnet_x1_0': osnet_x1_0,
     'osnet_x0_75': osnet_x0_75,
+    'osnet_x0_75_ibn': partial(osnet_x0_75, IN=True),
     'osnet_x0_5': osnet_x0_5,
+    'osnet_x0_5_ibn': partial(osnet_x0_5, IN=True),
     'osnet_x0_25': osnet_x0_25,
     'osnet_ibn_x1_0': osnet_ibn_x1_0
 }
