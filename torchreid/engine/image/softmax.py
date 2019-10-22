@@ -79,7 +79,7 @@ class ImageSoftmaxEngine(engine.Engine):
                 num_classes=self.datamanager.num_train_pids,
                 use_gpu=self.use_gpu,
                 conf_penalty=conf_penalty,
-                m=m, s=s
+                m=m, s=s, t=1.05
             )
         elif softmax_type == 'ada':
             self.criterion = AdaCosLoss(
