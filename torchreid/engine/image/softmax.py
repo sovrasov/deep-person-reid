@@ -9,7 +9,7 @@ import torch
 
 import torchreid
 from torchreid.engine import engine
-from torchreid.losses import CrossEntropyLoss, AMSoftmaxLoss, AdaCosLoss, DSoftmaxLoss
+from torchreid.losses import CrossEntropyLoss, AMSoftmaxLoss, AdaCosLoss, DSoftmaxLoss, MetricLosses
 from torchreid.utils import AverageMeter, open_specified_layers, open_all_layers
 from torchreid import metrics
 
@@ -64,7 +64,7 @@ class ImageSoftmaxEngine(engine.Engine):
 
     def __init__(self, datamanager, model, optimizer, reg_cfg, scheduler=None, use_gpu=False,
                  softmax_type='stock', label_smooth=True, conf_penalty=False,
-                 m=0.35, s=10):
+                 m=0.35, s=10, aux_metric_losses=False):
         super(ImageSoftmaxEngine, self).__init__(datamanager, model, reg_cfg, optimizer, scheduler, use_gpu)
 
         if softmax_type == 'stock':
@@ -93,6 +93,11 @@ class ImageSoftmaxEngine(engine.Engine):
                 use_gpu=self.use_gpu,
                 conf_penalty=conf_penalty
             )
+
+        if aux_metric_losses:
+            self.metric_losses = MetricLosses(self.datamanager.num_train_pids, 0, self.writer)
+        else:
+            self.metric_losses = None
 
     def train(self, epoch, max_epoch, trainloader, fixbase_epoch=0, open_layers=None, print_freq=10):
         losses = AverageMeter()
@@ -136,6 +141,9 @@ class ImageSoftmaxEngine(engine.Engine):
                 reg_loss = self.regularizer(self.model)
                 reg_ow_loss.update(reg_loss.item(), pids.size(0))
                 loss += reg_loss + of_reg_loss
+
+            if self.metric_losses is not None:
+                pass
 
             loss.backward()
             self.optimizer.step()

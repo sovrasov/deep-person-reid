@@ -8,6 +8,7 @@ from .d_softmax import DSoftmaxLoss
 from .cross_entropy_loss import CrossEntropyLoss
 from .hard_mine_triplet_loss import TripletLoss
 from .regularizers import get_regularizer, OFPenalty
+from .metric import MetricLosses
 
 
 def DeepSupervision(criterion, xs, y):
