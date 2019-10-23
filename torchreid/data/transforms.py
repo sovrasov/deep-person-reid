@@ -259,7 +259,7 @@ def build_transforms(height, width, transforms='random_flip', norm_mean=[0.485, 
         transform_tr += [ColorJitter(brightness=0.2, contrast=0.15, saturation=0, hue=0)]
     if 'random_affine' in transforms:
         print('+ random affine')
-        transform_tr += [RandomAffine(5, translate=(0.05, 0.05), scale=(0.95, 1.15))]
+        transform_tr += [RandomAffine(3, translate=None, scale=(0.95, 1.05))]
     print('+ to torch tensor of range [0, 1]')
     transform_tr += [ToTensor()]
     print('+ normalization (mean={}, std={})'.format(norm_mean, norm_std))
