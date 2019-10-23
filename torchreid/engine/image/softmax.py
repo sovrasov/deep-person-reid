@@ -62,9 +62,9 @@ class ImageSoftmaxEngine(engine.Engine):
         )
     """
 
-    def __init__(self, datamanager, model, optimizer, reg_cfg, scheduler=None, use_gpu=False,
+    def __init__(self, datamanager, model, optimizer, reg_cfg, metric_cfg, scheduler=None, use_gpu=False,
                  softmax_type='stock', label_smooth=True, conf_penalty=False,
-                 m=0.35, s=10, aux_metric_losses=False):
+                 m=0.35, s=10):
         super(ImageSoftmaxEngine, self).__init__(datamanager, model, reg_cfg, optimizer, scheduler, use_gpu)
 
         if softmax_type == 'stock':
@@ -94,8 +94,13 @@ class ImageSoftmaxEngine(engine.Engine):
                 conf_penalty=conf_penalty
             )
 
-        if aux_metric_losses:
-            self.metric_losses = MetricLosses(self.datamanager.num_train_pids, 0, self.writer)
+        if metric_cfg.enabled:
+            self.metric_losses = MetricLosses(self.datamanager.num_train_pids, 256, self.writer)
+            self.metric_losses.center_coeff = metric_cfg.center_coeff
+            self.metric_losses.glob_push_plus_loss_coeff = metric_cfg.glob_push_plus_loss_coeff
+            self.metric_losses.push_loss_coeff = metric_cfg.push_loss_coeff
+            self.metric_losses.push_plus_loss_coeff = metric_cfg.push_plus_loss_coeff
+            self.metric_losses.min_margin_loss_coeff = metric_cfg.min_margin_loss_coeff
         else:
             self.metric_losses = None
 
@@ -125,8 +130,10 @@ class ImageSoftmaxEngine(engine.Engine):
                 pids = pids.cuda()
 
             self.optimizer.zero_grad()
-            if self.regularizer:
+            if self.of_regularizer:
                 outputs, feature_maps = self.model(imgs, get_of_outputs=True)
+            elif self.metric_losses is not None:
+                outputs, embeddings = self.model(imgs, get_embedding=True)
             else:
                 outputs = self.model(imgs)
                 feature_maps = []
@@ -143,7 +150,8 @@ class ImageSoftmaxEngine(engine.Engine):
                 loss += reg_loss + of_reg_loss
 
             if self.metric_losses is not None:
-                pass
+                metric_loss, _ = self.metric_losses(embeddings, pids, epoch, epoch * num_batches + batch_idx)
+                loss += metric_loss
 
             loss.backward()
             self.optimizer.step()

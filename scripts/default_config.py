@@ -93,6 +93,15 @@ def get_default_config():
     cfg.loss.triplet.weight_t =1. # weight to balance hard triplet loss
     cfg.loss.triplet.weight_x = 0. # weight to balance cross entropy loss
 
+    # metric_losses
+    cfg.metric_losses = CN()
+    cfg.metric_losses.enabled = False
+    cfg.metric_losses.center_coeff = 0.0
+    cfg.metric_losses.push_loss_coeff = 0.0
+    cfg.metric_losses.push_plus_loss_coeff = 0.0
+    cfg.metric_losses.glob_push_plus_loss_coeff = 0.0
+    cfg.metric_losses.min_margin_loss_coeff = 0.0
+
     # regularizers
     cfg.reg = CN()
     cfg.reg.ow = False

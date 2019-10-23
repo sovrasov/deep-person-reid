@@ -192,13 +192,15 @@ class MetricLosses:
         center_loss_val = 0
         if self.center_coeff > 0.:
             center_loss_val = self.center_loss(features, labels)
-            self.writer.add_scalar('Loss/center_loss', center_loss_val, iteration)
+            if self.writer is not None:
+                self.writer.add_scalar('Loss/center_loss', center_loss_val, iteration)
             log_string += ' Center loss: %.4f' % center_loss_val
 
         push_loss_val = 0
         if self.push_loss_coeff > 0.0:
             push_loss_val = self.push_loss(features, labels)
-            self.writer.add_scalar('Loss/push_loss', push_loss_val, iteration)
+            if self.writer is not None:
+                self.writer.add_scalar('Loss/push_loss', push_loss_val, iteration)
             log_string += ' Push loss: %.4f' % push_loss_val
 
         push_plus_loss_val = 0
@@ -210,13 +212,15 @@ class MetricLosses:
         glob_push_plus_loss_val = 0
         if self.glob_push_plus_loss_coeff > 0.0 and self.center_coeff > 0.0:
             glob_push_plus_loss_val = self.glob_push_plus_loss(features, self.center_loss.get_centers(), labels)
-            self.writer.add_scalar('Loss/global_push_plus_loss', glob_push_plus_loss_val, iteration)
+            if self.writer is not None:
+                self.writer.add_scalar('Loss/global_push_plus_loss', glob_push_plus_loss_val, iteration)
             log_string += ' Global Push Plus loss: %.4f' % glob_push_plus_loss_val
 
         min_margin_loss_val = 0
         if self.min_margin_loss_coeff > 0.0 and self.center_coeff > 0.0:
             min_margin_loss_val = self.min_margin_loss(self.center_loss.get_centers(), labels)
-            self.writer.add_scalar('Loss/min_margin_loss', min_margin_loss_val, iteration)
+            if self.writer is not None:
+                self.writer.add_scalar('Loss/min_margin_loss', min_margin_loss_val, iteration)
             log_string += ' Min margin loss: %.4f' % min_margin_loss_val
 
         loss_value = self.center_coeff * center_loss_val + self.push_loss_coeff * push_loss_val + \
@@ -224,7 +228,8 @@ class MetricLosses:
                      + self.glob_push_plus_loss_coeff * glob_push_plus_loss_val
 
         if self.min_margin_loss_coeff + self.center_coeff + self.push_loss_coeff + self.push_plus_loss_coeff > 0.:
-            self.writer.add_scalar('Loss/AUX_losses', loss_value, iteration)
+            if self.writer is not None:
+                self.writer.add_scalar('Loss/AUX_losses', loss_value, iteration)
 
         return loss_value, log_string
 

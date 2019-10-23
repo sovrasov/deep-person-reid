@@ -332,7 +332,7 @@ class OSNet(nn.Module):
         x = self.conv5(x)
         return x
 
-    def forward(self, x, return_featuremaps=False, get_of_outputs=False):
+    def forward(self, x, return_featuremaps=False, get_of_outputs=False, get_embedding=False):
         x = self.featuremaps(x)
         if return_featuremaps:
             return x
@@ -352,6 +352,8 @@ class OSNet(nn.Module):
         if self.loss in ['softmax', 'am_softmax', 'adacos', 'd_softmax']:
             if get_of_outputs:
                 return y, [x]
+            if get_embedding:
+                return y, v
             return y
         elif self.loss == 'triplet':
             return y, v
