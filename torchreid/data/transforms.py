@@ -254,7 +254,7 @@ def build_transforms(height, width, transforms='random_flip', norm_mean=[0.485, 
         transform_tr += [RandomPatch()]
     if 'color_jitter' in transforms:
         print('+ color jitter')
-        transform_tr += [ColorJitter(brightness=0.2, contrast=0.15, saturation=0, hue=0)]
+        transform_tr += [ColorJitter(brightness=0.2, contrast=0.15, saturation=0.1, hue=0.1)]
     if 'random_affine' in transforms:
         print('+ random affine')
         transform_tr += [RandomAffine(3, translate=None, scale=(0.95, 1.05))]
