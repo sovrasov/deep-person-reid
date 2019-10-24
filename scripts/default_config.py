@@ -100,6 +100,7 @@ def get_default_config():
     cfg.metric_losses.push_plus_loss_coeff = 0.0
     cfg.metric_losses.glob_push_plus_loss_coeff = 0.0
     cfg.metric_losses.min_margin_loss_coeff = 0.0
+    cfg.metric_losses.soft_margin = False
 
     # regularizers
     cfg.reg = CN()

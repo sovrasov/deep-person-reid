@@ -68,11 +68,12 @@ class MinimumMargin(nn.Module):
 
 class GlobalPushPlus(nn.Module):
     """Implements the Global Push Plus loss"""
-    def __init__(self, margin=.6):
+    def __init__(self, margin=.6, soft_margin=False):
         super().__init__()
         self.min_margin = 0.15
         self.max_margin = margin
         self.num_calls = 0
+        self.soft_margin = soft_margin
 
     def forward(self, features, centers, labels):
         self.num_calls += 1
@@ -91,7 +92,10 @@ class GlobalPushPlus(nn.Module):
         margin = self.min_margin + float(self.num_calls) / float(40000) * (self.max_margin - self.min_margin)
         margin = min(margin, self.max_margin)
 
-        losses = margin + pos_distances.view(-1, 1) - neg_distances
+        if self.soft_margin:
+            losses = torch.log(1. + torch.exp(pos_distances.view(-1, 1) - neg_distances))
+        else:
+            losses = margin + pos_distances.view(-1, 1) - neg_distances
 
         valid_pairs = (different_class_pairs * (losses.cpu().data.numpy() > 0.0)).astype(np.float32)
         num_valid = float(np.sum(valid_pairs))
@@ -168,7 +172,7 @@ class PushLoss(nn.Module):
 class MetricLosses:
     """Class-aggregator for all metric-learning losses"""
 
-    def __init__(self, classes_num, embed_size, writer):
+    def __init__(self, classes_num, embed_size, writer, soft_margin=False):
         self.writer = writer
         self.center_loss = CenterLoss(classes_num, embed_size, cos_dist=True)
         self.optimizer_centloss = torch.optim.SGD(self.center_loss.parameters(), lr=0.5)
@@ -180,7 +184,7 @@ class MetricLosses:
         self.push_plus_loss = PushPlusLoss(margin=0.7)
         self.push_plus_loss_coeff = 0.0
 
-        self.glob_push_plus_loss = GlobalPushPlus(margin=0.7)
+        self.glob_push_plus_loss = GlobalPushPlus(0.7, soft_margin)
         self.glob_push_plus_loss_coeff = 0.0
 
         self.min_margin_loss = MinimumMargin(margin=.7)
