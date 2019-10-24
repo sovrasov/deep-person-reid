@@ -237,6 +237,7 @@ class OSNet(nn.Module):
         assert num_blocks == len(channels) - 1
         self.activation = activation
         self.loss = loss
+        self.feature_dim = feature_dim
 
         # convolutional backbone
         self.conv1 = ConvLayer(3, channels[0], 7, stride=2, padding=3, IN=IN)
@@ -314,6 +315,10 @@ class OSNet(nn.Module):
                 nn.init.constant_(m.bias, 0)
 
             elif isinstance(m, nn.BatchNorm1d):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
+
+            elif isinstance(m, nn.InstanceNorm2d):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
 
