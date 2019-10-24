@@ -192,6 +192,7 @@ class MetricLosses:
         center_loss_val = 0
         if self.center_coeff > 0.:
             center_loss_val = self.center_loss(features, labels)
+            self.last_center_val = center_loss_val
             if self.writer is not None:
                 self.writer.add_scalar('Loss/center_loss', center_loss_val, iteration)
             log_string += ' Center loss: %.4f' % center_loss_val
@@ -241,6 +242,7 @@ class MetricLosses:
     def end_iteration(self):
         """Finalizes a training iteration"""
         if self.center_coeff > 0.:
+            self.last_center_val.backward(retain_graph=True)
             for param in self.center_loss.parameters():
                 param.grad.data *= (1. / self.center_coeff)
             self.optimizer_centloss.step()

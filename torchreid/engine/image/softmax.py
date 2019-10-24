@@ -147,7 +147,9 @@ class ImageSoftmaxEngine(Engine):
 
             if self.metric_losses is not None:
                 self.metric_losses.writer = self.writer
+                self.metric_losses.init_iteration()
                 metric_loss, info = self.metric_losses(embeddings, pids, epoch, epoch * num_batches + batch_idx)
+                self.metric_losses.end_iteration()
                 loss += metric_loss
 
             loss.backward()
