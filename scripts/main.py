@@ -38,6 +38,7 @@ def build_engine(cfg, datamanager, model, optimizer, scheduler):
                 label_smooth=cfg.loss.softmax.label_smooth,
                 conf_penalty=cfg.loss.softmax.conf_pen,
                 softmax_type='stock',
+                feature_dim=cfg.model.feature_dim,
             )
         elif cfg.loss.name == 'am_softmax':
             engine = torchreid.engine.ImageSoftmaxEngine(
@@ -52,6 +53,7 @@ def build_engine(cfg, datamanager, model, optimizer, scheduler):
                 softmax_type='am',
                 m=cfg.loss.softmax.m,
                 s=cfg.loss.softmax.s,
+                feature_dim=cfg.model.feature_dim,
             )
         elif cfg.loss.name == 'adacos':
             engine = torchreid.engine.ImageSoftmaxEngine(
@@ -64,6 +66,7 @@ def build_engine(cfg, datamanager, model, optimizer, scheduler):
                 use_gpu=cfg.use_gpu,
                 conf_penalty=cfg.loss.softmax.conf_pen,
                 softmax_type='ada',
+                feature_dim=cfg.model.feature_dim,
             )
         elif cfg.loss.name == 'd_softmax':
             engine = torchreid.engine.ImageSoftmaxEngine(
@@ -76,30 +79,7 @@ def build_engine(cfg, datamanager, model, optimizer, scheduler):
                 use_gpu=cfg.use_gpu,
                 conf_penalty=cfg.loss.softmax.conf_pen,
                 softmax_type='d_sm',
-            )
-        elif cfg.loss.name == 'adacos':
-            engine = torchreid.engine.ImageSoftmaxEngine(
-                datamanager,
-                model,
-                optimizer,
-                cfg.reg,
-                cfg.metric_losses,
-                scheduler=scheduler,
-                use_gpu=cfg.use_gpu,
-                conf_penalty=cfg.loss.softmax.conf_pen,
-                softmax_type='ada',
-            )
-        elif cfg.loss.name == 'd_softmax':
-            engine = torchreid.engine.ImageSoftmaxEngine(
-                datamanager,
-                model,
-                optimizer,
-                cfg.reg,
-                cfg.metric_losses,
-                scheduler=scheduler,
-                use_gpu=cfg.use_gpu,
-                conf_penalty=cfg.loss.softmax.conf_pen,
-                softmax_type='d_sm',
+                feature_dim=cfg.model.feature_dim,
             )
         else:
             engine = torchreid.engine.ImageTripletEngine(

@@ -60,7 +60,7 @@ class ImageSoftmaxEngine(Engine):
 
     def __init__(self, datamanager, model, optimizer, reg_cfg, metric_cfg, scheduler=None, use_gpu=False,
                  softmax_type='stock', label_smooth=True, conf_penalty=False,
-                 m=0.35, s=10):
+                 m=0.35, s=10, feature_dim=256):
         super(ImageSoftmaxEngine, self).__init__(datamanager, model, reg_cfg, optimizer, scheduler, use_gpu)
 
         if softmax_type == 'stock':
@@ -92,7 +92,7 @@ class ImageSoftmaxEngine(Engine):
 
         if metric_cfg.enabled:
             self.metric_losses = MetricLosses(self.datamanager.num_train_pids,
-                                              256, self.writer, metric_cfg.soft_margin)
+                                              feature_dim, self.writer, metric_cfg.soft_margin)
             self.metric_losses.center_coeff = metric_cfg.center_coeff
             self.metric_losses.glob_push_plus_loss_coeff = metric_cfg.glob_push_plus_loss_coeff
             self.metric_losses.push_loss_coeff = metric_cfg.push_loss_coeff
