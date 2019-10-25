@@ -110,9 +110,10 @@ class GlobalPushPlus(nn.Module):
 
 class PushPlusLoss(nn.Module):
     """Implements the Push Plus loss"""
-    def __init__(self, margin=.7):
+    def __init__(self, margin=.7, soft_margin=False):
         super().__init__()
         self.margin = margin
+        self.soft_margin = soft_margin
 
     def forward(self, features, centers, labels):
         features = F.normalize(features)
@@ -125,7 +126,10 @@ class PushPlusLoss(nn.Module):
         pos_distances = 1.0 - torch.sum(features * batch_centers, dim=1)
         neg_distances = 1.0 - torch.mm(features, torch.t(features))
 
-        losses = self.margin + pos_distances.view(-1, 1) - neg_distances
+        if self.soft_margin:
+            losses = torch.log(1. + torch.exp(pos_distances.view(-1, 1) - neg_distances))
+        else:
+            losses = self.margin + pos_distances.view(-1, 1) - neg_distances
         valid_pairs = (all_pairs * (losses.cpu().data.numpy() > 0.0)).astype(np.float32)
         num_valid = float(np.sum(valid_pairs))
 
@@ -139,9 +143,9 @@ class PushPlusLoss(nn.Module):
 
 class PushLoss(nn.Module):
     """Implements the Push loss"""
-    def __init__(self, soft=True, margin=0.5):
+    def __init__(self, margin=0.5, soft_margin=True):
         super().__init__()
-        self.soft = soft
+        self.soft = soft_margin
         self.margin = margin
 
     def forward(self, features, labels):
@@ -178,10 +182,10 @@ class MetricLosses:
         self.optimizer_centloss = torch.optim.SGD(self.center_loss.parameters(), lr=0.5)
         self.center_coeff = 0.0
 
-        self.push_loss = PushLoss(soft=False, margin=0.7)
+        self.push_loss = PushLoss(0.7, soft_margin)
         self.push_loss_coeff = 0.0
 
-        self.push_plus_loss = PushPlusLoss(margin=0.7)
+        self.push_plus_loss = PushPlusLoss(0.7, soft_margin)
         self.push_plus_loss_coeff = 0.0
 
         self.glob_push_plus_loss = GlobalPushPlus(0.7, soft_margin)
