@@ -93,7 +93,7 @@ ACT_MAP = {'relu': torch.nn.ReLU,
 
 
 def build_model(name, num_classes, loss='softmax', pretrained=True,
-                use_gpu=True, dropout_prob=0.0, feature_dim=512, activation='relu'):
+                use_gpu=True, dropout_prob=0.0, feature_dim=512, activation='relu', in_first=False):
     """A function wrapper for building a model.
 
     Args:
@@ -123,4 +123,5 @@ def build_model(name, num_classes, loss='softmax', pretrained=True,
         dropout_prob=dropout_prob,
         feature_dim=feature_dim,
         activation=ACT_MAP[activation],
+        IN_first=in_first
     )

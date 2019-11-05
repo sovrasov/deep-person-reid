@@ -33,7 +33,8 @@ def main():
         use_gpu=cfg.use_gpu,
         dropout_prob=cfg.model.dropout_prob,
         feature_dim=cfg.model.feature_dim,
-        activation=cfg.model.activation
+        activation=cfg.model.activation,
+        in_first=cfg.model.in_first
         )
     load_pretrained_weights(model, cfg.model.load_weights)
     model.eval()

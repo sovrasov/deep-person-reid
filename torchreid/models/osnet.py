@@ -230,7 +230,7 @@ class OSNet(nn.Module):
     """
 
     def __init__(self, num_classes, blocks, layers, channels, feature_dim=256,
-                 loss='softmax', IN=False, dropout_prob=0, activation=nn.ReLU, **kwargs):
+                 loss='softmax', IN=False, dropout_prob=0, activation=nn.ReLU, IN_first=False, **kwargs):
         super(OSNet, self).__init__()
         num_blocks = len(blocks)
         assert num_blocks == len(layers)
@@ -240,6 +240,9 @@ class OSNet(nn.Module):
         self.feature_dim = feature_dim
 
         # convolutional backbone
+        self.use_IN_first = IN_first
+        if IN_first:
+            self.in_first = nn.InstanceNorm2d(3, affine=True)
         self.conv1 = ConvLayer(3, channels[0], 7, stride=2, padding=3, IN=IN)
         self.maxpool = nn.MaxPool2d(3, stride=2, padding=1)
         self.conv2 = self._make_layer(blocks[0], layers[0], channels[0], channels[1],
@@ -328,6 +331,8 @@ class OSNet(nn.Module):
                     nn.init.constant_(m.bias, 0)
 
     def featuremaps(self, x):
+        if self.use_IN_first:
+            x = self.in_first(x)
         x = self.conv1(x)
         x = self.maxpool(x)
         x = self.conv2(x)

@@ -13,6 +13,7 @@ def get_default_config():
     cfg.model.dropout_prob = 0.0
     cfg.model.feature_dim = 512
     cfg.model.activation = 'relu'
+    cfg.model.in_first = False
 
     # data
     cfg.data = CN()

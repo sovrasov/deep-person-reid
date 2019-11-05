@@ -177,7 +177,8 @@ def main():
         use_gpu=cfg.use_gpu,
         dropout_prob=cfg.model.dropout_prob,
         feature_dim=cfg.model.feature_dim,
-        activation=cfg.model.activation
+        activation=cfg.model.activation,
+        in_first=cfg.model.in_first
     )
     num_params, flops = compute_model_complexity(model, (1, 3, cfg.data.height, cfg.data.width))
     print('Model complexity: params={:,} flops={:,}'.format(num_params, flops))
