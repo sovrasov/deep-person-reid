@@ -243,7 +243,7 @@ class OSNet(nn.Module):
         self.use_IN_first = IN_first
         if IN_first:
             self.in_first = nn.InstanceNorm2d(3, affine=True)
-        self.conv1 = ConvLayer(3, channels[0], 7, stride=2, padding=3, IN=IN)
+        self.conv1 = ConvLayer(3, channels[0], 7, stride=2, padding=3, IN=IN_first)
         self.maxpool = nn.MaxPool2d(3, stride=2, padding=1)
         self.conv2 = self._make_layer(blocks[0], layers[0], channels[0], channels[1],
                                       reduce_spatial_size=True, IN=IN, dropout_p=dropout_prob)
