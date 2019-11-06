@@ -182,8 +182,6 @@ class MetricLosses:
         self.center_loss = CenterLoss(classes_num, embed_size, cos_dist=True)
         self.optimizer_centloss = torch.optim.SGD(self.center_loss.parameters(), lr=0.5)
         self.center_coeff = 0.0
-        if self.center_coeff > 0:
-            self.total_losses_num += 1
 
         self.push_loss = PushLoss(0.7, soft_margin)
         self.push_loss_coeff = 0.0
@@ -206,9 +204,9 @@ class MetricLosses:
             self.total_losses_num += 1
 
         self.loss_balancing = loss_balancing
-        if self.loss_balancing and self.total_losses_num > 0:
-            self.loss_weights = torch.nn.Parameter(torch.FloatTensor(self.total_losses_num))
-            self.balancing_optimizer = torch.optim.SGD(self.loss_weights, lr=0.01)
+        if self.loss_balancing:
+            self.loss_weights = nn.Parameter(torch.FloatTensor(10).cuda())
+            self.balancing_optimizer = torch.optim.SGD([self.loss_weights], lr=0.01)
             for i in range(self.total_losses_num):
                 self.loss_weights.data[i] = 0.
 
@@ -223,7 +221,9 @@ class MetricLosses:
         log_string = ''
         all_loss_values = []
         center_loss_val = 0
+        self.total_losses_num = 0
         if self.center_coeff > 0.:
+            self.total_losses_num += 1
             center_loss_val = self.center_loss(features, labels)
             all_loss_values.append(center_loss_val)
             self.last_center_val = center_loss_val
@@ -233,6 +233,7 @@ class MetricLosses:
 
         push_loss_val = 0
         if self.push_loss_coeff > 0.0:
+            self.total_losses_num += 1
             push_loss_val = self.push_loss(features, labels)
             all_loss_values.append(push_loss_val)
             if self.writer is not None:
@@ -241,6 +242,7 @@ class MetricLosses:
 
         push_plus_loss_val = 0
         if self.push_plus_loss_coeff > 0.0 and self.center_coeff > 0.0:
+            self.total_losses_num += 1
             push_plus_loss_val = self.push_plus_loss(features, self.center_loss.get_centers(), labels)
             all_loss_values.append(push_plus_loss_val)
             self.writer.add_scalar('Loss/push_plus_loss', push_plus_loss_val, iteration)
@@ -248,6 +250,7 @@ class MetricLosses:
 
         glob_push_plus_loss_val = 0
         if self.glob_push_plus_loss_coeff > 0.0 and self.center_coeff > 0.0:
+            self.total_losses_num += 1
             glob_push_plus_loss_val = self.glob_push_plus_loss(features, self.center_loss.get_centers(), labels)
             all_loss_values.append(glob_push_plus_loss_val)
             if self.writer is not None:
@@ -256,6 +259,7 @@ class MetricLosses:
 
         min_margin_loss_val = 0
         if self.min_margin_loss_coeff > 0.0 and self.center_coeff > 0.0:
+            self.total_losses_num += 1
             min_margin_loss_val = self.min_margin_loss(self.center_loss.get_centers(), labels)
             all_loss_values.append(min_margin_loss_val)
             if self.writer is not None:
@@ -263,12 +267,12 @@ class MetricLosses:
             log_string += ' Min margin loss: %.4f' % min_margin_loss_val
 
         if self.loss_balancing and self.total_losses_num > 1:
-            loss_value = self.center_coeff * self._balance_losses()
+            loss_value = self.center_coeff * self._balance_losses(all_loss_values)
+            self.last_loss_value = loss_value
         else:
             loss_value = self.center_coeff * center_loss_val + self.push_loss_coeff * push_loss_val \
                         + self.push_plus_loss_coeff * push_plus_loss_val + self.min_margin_loss_coeff * min_margin_loss_val \
                         + self.glob_push_plus_loss_coeff * glob_push_plus_loss_val
-            self.last_loss_value = loss_value
 
         if self.total_losses_num > 0:
             if self.writer is not None:
@@ -281,7 +285,7 @@ class MetricLosses:
         if self.center_coeff > 0.:
             self.optimizer_centloss.zero_grad()
 
-        if self.loss_balancing and self.total_losses_num > 1:
+        if self.loss_balancing:
             self.balancing_optimizer.zero_grad()
 
     def end_iteration(self):
