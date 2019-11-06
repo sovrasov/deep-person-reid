@@ -92,7 +92,9 @@ class ImageSoftmaxEngine(Engine):
 
         if metric_cfg.enabled:
             self.metric_losses = MetricLosses(self.datamanager.num_train_pids,
-                                              feature_dim, self.writer, metric_cfg.soft_margin)
+                                              feature_dim, self.writer,
+                                              metric_cfg.soft_margin,
+                                              metric_cfg.balance_losses)
             self.metric_losses.center_coeff = metric_cfg.center_coeff
             self.metric_losses.glob_push_plus_loss_coeff = metric_cfg.glob_push_plus_loss_coeff
             self.metric_losses.push_loss_coeff = metric_cfg.push_loss_coeff

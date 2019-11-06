@@ -176,30 +176,56 @@ class PushLoss(nn.Module):
 class MetricLosses:
     """Class-aggregator for all metric-learning losses"""
 
-    def __init__(self, classes_num, embed_size, writer, soft_margin=False):
+    def __init__(self, classes_num, embed_size, writer, soft_margin=False, loss_balancing=False):
+        self.total_losses_num = 0
         self.writer = writer
         self.center_loss = CenterLoss(classes_num, embed_size, cos_dist=True)
         self.optimizer_centloss = torch.optim.SGD(self.center_loss.parameters(), lr=0.5)
         self.center_coeff = 0.0
+        if self.center_coeff > 0:
+            self.total_losses_num += 1
 
         self.push_loss = PushLoss(0.7, soft_margin)
         self.push_loss_coeff = 0.0
+        if self.push_loss_coeff > 0:
+            self.total_losses_num += 1
 
         self.push_plus_loss = PushPlusLoss(0.7, soft_margin)
         self.push_plus_loss_coeff = 0.0
+        if self.push_plus_loss_coeff > 0:
+            self.total_losses_num += 1
 
         self.glob_push_plus_loss = GlobalPushPlus(0.7, soft_margin)
         self.glob_push_plus_loss_coeff = 0.0
+        if self.glob_push_plus_loss_coeff > 0:
+            self.total_losses_num += 1
 
         self.min_margin_loss = MinimumMargin(margin=.7)
         self.min_margin_loss_coeff = 0.0
+        if self.min_margin_loss_coeff > 0:
+            self.total_losses_num += 1
+
+        self.loss_balancing = loss_balancing
+        if self.loss_balancing and self.total_losses_num > 0:
+            self.loss_weights = torch.nn.Parameter(torch.FloatTensor(self.total_losses_num))
+            self.balancing_optimizer = torch.optim.SGD(self.loss_weights, lr=0.01)
+            for i in range(self.total_losses_num):
+                self.loss_weights.data[i] = 0.
+
+    def _balance_losses(self, losses):
+        assert len(losses) == self.total_losses_num
+        for i, loss_val in enumerate(losses):
+            losses[i] = torch.exp(-self.loss_weights[i]) * loss_val + \
+                            0.5 * self.loss_weights[i]
+        return sum(losses)
 
     def __call__(self, features, labels, epoch_num, iteration):
         log_string = ''
-
+        all_loss_values = []
         center_loss_val = 0
         if self.center_coeff > 0.:
             center_loss_val = self.center_loss(features, labels)
+            all_loss_values.append(center_loss_val)
             self.last_center_val = center_loss_val
             if self.writer is not None:
                 self.writer.add_scalar('Loss/center_loss', center_loss_val, iteration)
@@ -208,6 +234,7 @@ class MetricLosses:
         push_loss_val = 0
         if self.push_loss_coeff > 0.0:
             push_loss_val = self.push_loss(features, labels)
+            all_loss_values.append(push_loss_val)
             if self.writer is not None:
                 self.writer.add_scalar('Loss/push_loss', push_loss_val, iteration)
             log_string += ' Push loss: %.4f' % push_loss_val
@@ -215,12 +242,14 @@ class MetricLosses:
         push_plus_loss_val = 0
         if self.push_plus_loss_coeff > 0.0 and self.center_coeff > 0.0:
             push_plus_loss_val = self.push_plus_loss(features, self.center_loss.get_centers(), labels)
+            all_loss_values.append(push_plus_loss_val)
             self.writer.add_scalar('Loss/push_plus_loss', push_plus_loss_val, iteration)
             log_string += ' Push Plus loss: %.4f' % push_plus_loss_val
 
         glob_push_plus_loss_val = 0
         if self.glob_push_plus_loss_coeff > 0.0 and self.center_coeff > 0.0:
             glob_push_plus_loss_val = self.glob_push_plus_loss(features, self.center_loss.get_centers(), labels)
+            all_loss_values.append(glob_push_plus_loss_val)
             if self.writer is not None:
                 self.writer.add_scalar('Loss/global_push_plus_loss', glob_push_plus_loss_val, iteration)
             log_string += ' Global Push Plus loss: %.4f' % glob_push_plus_loss_val
@@ -228,15 +257,20 @@ class MetricLosses:
         min_margin_loss_val = 0
         if self.min_margin_loss_coeff > 0.0 and self.center_coeff > 0.0:
             min_margin_loss_val = self.min_margin_loss(self.center_loss.get_centers(), labels)
+            all_loss_values.append(min_margin_loss_val)
             if self.writer is not None:
                 self.writer.add_scalar('Loss/min_margin_loss', min_margin_loss_val, iteration)
             log_string += ' Min margin loss: %.4f' % min_margin_loss_val
 
-        loss_value = self.center_coeff * center_loss_val + self.push_loss_coeff * push_loss_val + \
-                     self.push_plus_loss_coeff * push_plus_loss_val + self.min_margin_loss_coeff * min_margin_loss_val \
-                     + self.glob_push_plus_loss_coeff * glob_push_plus_loss_val
+        if self.loss_balancing and self.total_losses_num > 1:
+            loss_value = self.center_coeff * self._balance_losses()
+        else:
+            loss_value = self.center_coeff * center_loss_val + self.push_loss_coeff * push_loss_val \
+                        + self.push_plus_loss_coeff * push_plus_loss_val + self.min_margin_loss_coeff * min_margin_loss_val \
+                        + self.glob_push_plus_loss_coeff * glob_push_plus_loss_val
+            self.last_loss_value = loss_value
 
-        if self.min_margin_loss_coeff + self.center_coeff + self.push_loss_coeff + self.push_plus_loss_coeff > 0.:
+        if self.total_losses_num > 0:
             if self.writer is not None:
                 self.writer.add_scalar('Loss/AUX_losses', loss_value, iteration)
 
@@ -247,8 +281,15 @@ class MetricLosses:
         if self.center_coeff > 0.:
             self.optimizer_centloss.zero_grad()
 
+        if self.loss_balancing and self.total_losses_num > 1:
+            self.balancing_optimizer.zero_grad()
+
     def end_iteration(self):
         """Finalizes a training iteration"""
+        if self.loss_balancing and self.total_losses_num > 1:
+            self.last_loss_value.backward(retain_graph=True)
+            self.balancing_optimizer.step()
+
         if self.center_coeff > 0.:
             self.last_center_val.backward(retain_graph=True)
             for param in self.center_loss.parameters():
