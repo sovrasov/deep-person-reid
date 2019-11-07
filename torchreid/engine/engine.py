@@ -152,7 +152,7 @@ class Engine(object):
         elapsed = round(time.time() - time_start)
         elapsed = str(datetime.timedelta(seconds=elapsed))
         print('Elapsed {}'.format(elapsed))
-        if self.writer is None:
+        if self.writer is not None:
             self.writer.close()
 
     def train(self):
