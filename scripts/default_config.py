@@ -54,8 +54,8 @@ def get_default_config():
     cfg.data.transforms.color_jitter.p = 0.
     cfg.data.transforms.color_jitter.brightness = 0.2
     cfg.data.transforms.color_jitter.contrast = 0.15
-    cfg.data.transforms.color_jitter.saturation = 0
-    cfg.data.transforms.color_jitter.hue = 0
+    cfg.data.transforms.color_jitter.saturation = 0.
+    cfg.data.transforms.color_jitter.hue = 0.
 
     cfg.data.transforms.random_erase = CN()
     cfg.data.transforms.random_erase.p = 0.
