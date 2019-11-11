@@ -9,6 +9,9 @@ from collections import deque
 
 import torch
 from torchvision.transforms import *
+from torchvision.transforms import functional as F
+import cv2 as cv
+import numpy as np
 
 
 class Random2DTranslation(object):
@@ -209,6 +212,80 @@ class RandomPatch(object):
         return img
 
 
+class RandomPadding(object):
+    def __init__(self, p=0.5, padding=(0, 10), **kwargs):
+        self.p = p
+        self.padding_limits = padding
+
+    def __call__(self, img, *args, **kwargs):
+        if random.uniform(0, 1) > self.p:
+            return img
+        rnd_padding = [random.randint(self.padding_limits[0], self.padding_limits[1]) for _ in range(4)]
+        rnd_fill = random.randint(0, 255)
+        return F.pad(img, tuple(rnd_padding), fill=rnd_fill, padding_mode='constant')
+
+
+class RandomRotate(object):
+    def __init__(self, p=0.5, angle=(-5, 5), **kwargs):
+        self.p = p
+        self.angle = angle
+
+    def __call__(self, img, *args, **kwargs):
+        if random.uniform(0, 1) > self.p:
+            return img
+        rnd_angle = random.randint(self.angle[0], self.angle[1])
+        return F.rotate(img, rnd_angle, resample=False, expand=False, center=None)
+
+
+class RandomFigures(object):
+    """Insert random figure or some figures from the list [line, rectangle, circle]
+    with random color and thickness
+    """
+
+    def __init__(self, p=0.5, random_color=True, always_single_figure=False,
+                 thicknesses=(1, 6), circle_radiuses=(5, 64), figure_prob=0.5, **kwargs):
+        self.p = p
+        self.random_color = random_color
+        self.always_single_figure = always_single_figure
+        self.figures = (cv.line, cv.rectangle, cv.circle)
+        self.thicknesses = thicknesses
+        self.circle_radiuses = circle_radiuses
+        self.figure_prob = figure_prob
+
+    def __call__(self, image):
+        if random.uniform(0, 1) > self.p:
+            return image
+        if self.always_single_figure:
+            figure = [self.figures[random.randint(0, len(self.figures) - 1)]]
+        else:
+            figure = []
+            for i in range(len(self.figures)):
+                if random.uniform(0, 1) > self.figure_prob:
+                    figure.append(self.figures[i])
+        cv_image = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
+        h, w = cv_image.shape[:2]
+        for f in figure:
+            p1 = (random.randint(0, w), random.randint(0, h))
+            p2 = (random.randint(0, w), random.randint(0, h))
+            color = tuple([random.randint(0, 256) for _ in range(3)]) if self.random_color else (0, 0, 0)
+            thickness = random.randint(*self.thicknesses)
+            if f != cv.circle:
+                cv_image = f(cv_image, p1, p2, color, thickness)
+            else:
+                r = random.randint(*self.circle_radiuses)
+                cv_image = f(cv_image, p1, r, color, thickness)
+        img = cv.cvtColor(cv_image, cv.COLOR_BGR2RGB)
+        return Image.fromarray(img)
+
+
+class Show():
+    def __call__(self, image):
+        cv_image = cv.cvtColor(np.array(image), cv.COLOR_RGB2BGR)
+        cv.imshow('training_sample', cv_image)
+        cv.waitKey()
+        return image
+
+
 def build_transforms(height, width, transforms='random_flip', norm_mean=[0.485, 0.456, 0.406],
                      norm_std=[0.229, 0.224, 0.225], **kwargs):
     """Builds train and test transform functions.
@@ -222,18 +299,6 @@ def build_transforms(height, width, transforms='random_flip', norm_mean=[0.485, 
         norm_std (list or None, optional): normalization standard deviation values. Default is
             ImageNet standard deviation values.
     """
-    if transforms is None:
-        transforms = []
-
-    if isinstance(transforms, str):
-        transforms = [transforms]
-
-    if not isinstance(transforms, list):
-        raise ValueError('transforms must be a list of strings, but found to be {}'.format(type(transforms)))
-
-    if len(transforms) > 0:
-        transforms = [t.lower() for t in transforms]
-
     if norm_mean is None or norm_std is None:
         norm_mean = [0.485, 0.456, 0.406] # imagenet mean
         norm_std = [0.229, 0.224, 0.225] # imagenet std
@@ -241,34 +306,49 @@ def build_transforms(height, width, transforms='random_flip', norm_mean=[0.485, 
 
     print('Building train transforms ...')
     transform_tr = []
+
+    if transforms.random_padding.p > 0:
+        print('+ random_padding')
+        transform_tr += [RandomPadding(**transforms.random_padding)]
+    if transforms.random_figures.p > 0:
+        print('+ random_figures')
+        transform_tr += [RandomFigures(**transforms.random_figures)]
     transform_tr += [Resize((height, width))]
     print('+ resize to {}x{}'.format(height, width))
-    if 'random_flip' in transforms:
+    if transforms.random_flip.p > 0:
         print('+ random flip')
-        transform_tr += [RandomHorizontalFlip()]
-    if 'random_crop' in transforms:
+        transform_tr += [RandomHorizontalFlip(**transforms.random_flip)]
+    if transforms.random_crop.p > 0:
         print('+ random crop (enlarge to {}x{} and ' \
               'crop {}x{})'.format(int(round(height*1.125)), int(round(width*1.125)), height, width))
-        transform_tr += [Random2DTranslation(height, width)]
-    if 'random_patch' in transforms:
+        transform_tr += [Random2DTranslation(height, width, **transforms.random_crop)]
+    if transforms.random_patch.p > 0:
         print('+ random patch')
-        transform_tr += [RandomPatch()]
-    if 'color_jitter' in transforms:
+        transforms.random_patch.pop('p')
+        transform_tr += [RandomPatch(**transforms.random_patch)]
+    if transforms.color_jitter.p > 0:
         print('+ color jitter')
-        transform_tr += [ColorJitter(brightness=0.2, contrast=0.15, saturation=0.1, hue=0.1)]
-    if 'grayscale' in transforms:
-        print('+ grayscale')
-        transform_tr += [RandomGrayscale(p=0.2)]
-    if 'random_affine' in transforms:
-        print('+ random affine')
-        transform_tr += [RandomAffine(3, translate=None, scale=(0.95, 1.05))]
+        transforms.color_jitter.pop('p')
+        transform_tr += [ColorJitter(**transforms.color_jitter)]
+    if transforms.random_gray_scale.p > 0:
+        print('+ random grayscale')
+        transform_tr += [RandomGrayscale(**transforms.random_gray_scale)]
+    if transforms.random_perspective.p > 0:
+        print('+ random_perspective')
+        transform_tr += [RandomPerspective(**transforms.random_perspective)]
+    if transforms.random_rotate.p > 0:
+        print('+ random_rotate')
+        transform_tr += [RandomRotate(**transforms.random_rotate)]
+    if transforms.show:
+        transform_tr += [Show()]
     print('+ to torch tensor of range [0, 1]')
     transform_tr += [ToTensor()]
     print('+ normalization (mean={}, std={})'.format(norm_mean, norm_std))
     transform_tr += [normalize]
-    if 'random_erase' in transforms:
+    if transforms.random_erase.p > 0:
         print('+ random erase')
-        transform_tr += [RandomErasing()]
+        transforms.random_erase.pop('p')
+        transform_tr += [RandomErasing(**transforms.random_erase)]
     transform_tr = Compose(transform_tr)
 
     print('Building test transforms ...')

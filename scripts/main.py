@@ -129,8 +129,6 @@ def reset_config(cfg, args):
         cfg.data.sources = args.sources
     if args.targets:
         cfg.data.targets = args.targets
-    if args.transforms:
-        cfg.data.transforms = args.transforms
 
 
 def main():
@@ -138,7 +136,6 @@ def main():
     parser.add_argument('--config-file', type=str, default='', help='path to config file')
     parser.add_argument('-s', '--sources', type=str, nargs='+', help='source datasets (delimited by space)')
     parser.add_argument('-t', '--targets', type=str, nargs='+', help='target datasets (delimited by space)')
-    parser.add_argument('--transforms', type=str, nargs='+', help='data augmentation')
     parser.add_argument('--root', type=str, default='', help='path to data root')
     parser.add_argument('--gpu-devices', type=str, default='',)
     parser.add_argument('opts', default=None, nargs=argparse.REMAINDER, help='Modify config options using the command-line')

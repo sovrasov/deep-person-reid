@@ -26,10 +26,67 @@ def get_default_config():
     cfg.data.height = 256 # image height
     cfg.data.width = 128 # image width
     cfg.data.combineall = False # combine train, query and gallery for training
-    cfg.data.transforms = ['random_flip'] # data augmentation
     cfg.data.norm_mean = [0.485, 0.456, 0.406] # default is imagenet mean
     cfg.data.norm_std = [0.229, 0.224, 0.225] # default is imagenet std
     cfg.data.save_dir = 'log' # path to save log
+
+    # data augmentation
+    cfg.data.transforms = CN()
+
+    cfg.data.transforms.random_flip = CN()
+    cfg.data.transforms.random_flip.p = 0.5
+
+    cfg.data.transforms.random_crop = CN()
+    cfg.data.transforms.random_crop.p = 0.
+
+    cfg.data.transforms.random_gray_scale = CN()
+    cfg.data.transforms.random_gray_scale.p = 0.
+
+    cfg.data.transforms.random_padding = CN()
+    cfg.data.transforms.random_padding.p = 0.
+    cfg.data.transforms.random_padding.padding = (0, 10)
+
+    cfg.data.transforms.random_perspective = CN()
+    cfg.data.transforms.random_perspective.p = 0.
+    cfg.data.transforms.random_perspective.distortion_scale = 0.5
+
+    cfg.data.transforms.color_jitter = CN()
+    cfg.data.transforms.color_jitter.p = 0.
+    cfg.data.transforms.color_jitter.brightness = 0.2
+    cfg.data.transforms.color_jitter.contrast = 0.15
+    cfg.data.transforms.color_jitter.saturation = 0
+    cfg.data.transforms.color_jitter.hue = 0
+
+    cfg.data.transforms.random_erase = CN()
+    cfg.data.transforms.random_erase.p = 0.
+    cfg.data.transforms.random_erase.sl = 0.2
+    cfg.data.transforms.random_erase.sh = 0.4
+    cfg.data.transforms.random_erase.r1 = 0.3
+    cfg.data.transforms.random_erase.mean = (0.4914, 0.4822, 0.4465)
+
+    cfg.data.transforms.random_rotate = CN()
+    cfg.data.transforms.random_rotate.p = 0.
+    cfg.data.transforms.random_rotate.angle = (-5, 5)
+
+    cfg.data.transforms.random_figures = CN()
+    cfg.data.transforms.random_figures.p = 0.
+    cfg.data.transforms.random_figures.random_color = True
+    cfg.data.transforms.random_figures.always_single_figure = False
+    cfg.data.transforms.random_figures.thicknesses = (1, 6)
+    cfg.data.transforms.random_figures.circle_radiuses = (5, 64)
+    cfg.data.transforms.random_figures.figure_prob = 0.5
+
+    cfg.data.transforms.random_patch = CN()
+    cfg.data.transforms.random_patch.p = 0.
+    cfg.data.transforms.random_patch.pool_capacity = 50000
+    cfg.data.transforms.random_patch.min_sample_size = 100
+    cfg.data.transforms.random_patch.patch_min_area = 0.01
+    cfg.data.transforms.random_patch.patch_max_area = 0.5
+    cfg.data.transforms.random_patch.patch_min_ratio = 0.1
+    cfg.data.transforms.random_patch.prob_rotate = 0.5
+    cfg.data.transforms.random_patch.prob_flip_leftright = 0.5
+
+    cfg.data.transforms.show = False
 
     # specific datasets
     cfg.market1501 = CN()
