@@ -93,7 +93,7 @@ class GlobalPushPlus(nn.Module):
         margin = min(margin, self.max_margin)
 
         if self.soft_margin:
-            losses = torch.log(1. + torch.exp(pos_distances.view(-1, 1) - neg_distances))
+            losses = F.softplus(pos_distances.view(-1, 1) - neg_distances)
         else:
             losses = margin + pos_distances.view(-1, 1) - neg_distances
 
@@ -127,7 +127,7 @@ class PushPlusLoss(nn.Module):
         neg_distances = 1.0 - torch.mm(features, torch.t(features))
 
         if self.soft_margin:
-            losses = torch.log(1. + torch.exp(pos_distances.view(-1, 1) - neg_distances))
+            losses = F.softplus(pos_distances.view(-1, 1) - neg_distances)
         else:
             losses = self.margin + pos_distances.view(-1, 1) - neg_distances
         valid_pairs = (all_pairs * (losses.cpu().data.numpy() > 0.0)).astype(np.float32)
@@ -158,12 +158,11 @@ class PushLoss(nn.Module):
         valid_pairs = (all_pairs * np.tri(*all_pairs.shape, k=-1, dtype=np.bool)).astype(np.float32)
 
         if self.soft:
-            losses = torch.log(1. + torch.exp(torch.mm(features, torch.t(features)) - 1))
-            num_valid = float(np.sum(valid_pairs))
+            losses = F.softplus(torch.mm(features, torch.t(features)) - 1)
         else:
             losses = self.margin - (1. - torch.mm(features, torch.t(features)))
             valid_pairs *= (losses.cpu().data.numpy() > 0.0)
-            num_valid = float(np.sum(valid_pairs))
+        num_valid = float(np.sum(valid_pairs))
 
         if num_valid > 0:
             loss_value = torch.sum(losses * torch.from_numpy(valid_pairs).cuda())
