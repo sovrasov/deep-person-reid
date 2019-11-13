@@ -5,7 +5,7 @@ Torchreid
    :target: https://github.com/KaiyangZhou/deep-person-reid/blob/master/LICENSE
 
 
-Torchreid is a library built on `PyTorch <https://pytorch.org/>`_ for deep-learning person re-identification.
+Torchreid is a library for deep-learning person re-identification in `PyTorch <https://pytorch.org/>`_.
 
 It features:
 
@@ -33,11 +33,13 @@ Model zoo: https://kaiyangzhou.github.io/deep-person-reid/MODEL_ZOO.
 
 Tech report: https://arxiv.org/abs/1910.10093.
 
+You can find some research projects that are built on top of Torchreid `here <https://github.com/KaiyangZhou/deep-person-reid/tree/master/projects>`_.
+
 
 Installation
 ---------------
 
-Make sure your `conda <https://www.anaconda.com/distribution/>`_ is installed.
+Make sure `conda <https://www.anaconda.com/distribution/>`_ is installed.
 
 
 .. code-block:: bash
@@ -138,7 +140,7 @@ A unified interface
 -----------------------
 In "deep-person-reid/scripts/", we provide a unified interface to train and test a model. See "scripts/main.py" and "scripts/default_config.py" for more details. "configs/" contains some predefined configs which you can use as a starting point.
 
-Below we provide examples to train and test `OSNet (Zhou et al. ICCV'19) <https://arxiv.org/abs/1905.00953>`_. Assume :code:`PATH_TO_DATA` is the directory containing reid datasets.
+Below we provide an example to train and test `OSNet (Zhou et al. ICCV'19) <https://arxiv.org/abs/1905.00953>`_. Assume :code:`PATH_TO_DATA` is the directory containing reid datasets.
 
 Conventional setting
 ^^^^^^^^^^^^^^^^^^^^^
@@ -238,6 +240,7 @@ ImageNet classification models
 - `Inception-ResNet-V2 <https://arxiv.org/abs/1602.07261>`_
 - `Inception-V4 <https://arxiv.org/abs/1602.07261>`_
 - `Xception <https://arxiv.org/abs/1610.02357>`_
+- `IBN-Net <https://arxiv.org/abs/1807.09441>`_
 
 Lightweight models
 ^^^^^^^^^^^^^^^^^^^
@@ -265,7 +268,7 @@ Losses
 
 Citation
 ---------
-If you find this code useful to your research, please cite the following publications.
+If you find this code useful to your research, please cite the following papers.
 
 .. code-block:: bash
 
