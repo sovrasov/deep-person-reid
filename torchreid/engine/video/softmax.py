@@ -2,12 +2,8 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 
-import time
-import datetime
-
 import torch
 
-import torchreid
 from torchreid.engine.image import ImageSoftmaxEngine
 
 
@@ -20,7 +16,7 @@ class VideoSoftmaxEngine(ImageSoftmaxEngine):
         model (nn.Module): model instance.
         optimizer (Optimizer): an Optimizer.
         scheduler (LRScheduler, optional): if None, no learning rate decay will be performed.
-        use_cpu (bool, optional): use cpu. Default is False.
+        use_gpu (bool, optional): use gpu. Default is True.
         label_smooth (bool, optional): use label smoothing regularizer. Default is True.
         pooling_method (str, optional): how to pool features for a tracklet.
             Default is "avg" (average). Choices are ["avg", "max"].
@@ -65,9 +61,9 @@ class VideoSoftmaxEngine(ImageSoftmaxEngine):
     """
 
     def __init__(self, datamanager, model, optimizer, scheduler=None,
-                 use_cpu=False, label_smooth=True, pooling_method='avg'):
+                 use_gpu=True, label_smooth=True, pooling_method='avg'):
         super(VideoSoftmaxEngine, self).__init__(datamanager, model, optimizer, scheduler=scheduler,
-                                                 use_cpu=use_cpu, label_smooth=label_smooth)
+                                                 use_gpu=use_gpu, label_smooth=label_smooth)
         self.pooling_method = pooling_method
 
     def _parse_data_for_train(self, data):

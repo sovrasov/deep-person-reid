@@ -2,23 +2,19 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 
-import sys
-import os
 import os.path as osp
 import time
 import datetime
 import numpy as np
 import cv2
-from matplotlib import pyplot as plt
 
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
-import torchvision
+from tensorboardX import SummaryWriter
 
-import torchreid
 from torchreid.utils import AverageMeter, visualize_ranked_results, save_checkpoint, re_ranking, mkdir_if_missing
-from torchreid.losses import DeepSupervision
+from torchreid.losses import DeepSupervision, get_regularizer, OFPenalty
 from torchreid import metrics
 
 
@@ -34,15 +30,21 @@ class Engine(object):
         model (nn.Module): model instance.
         optimizer (Optimizer): an Optimizer.
         scheduler (LRScheduler, optional): if None, no learning rate decay will be performed.
-        use_cpu (bool, optional): use cpu. Default is False.
+        use_gpu (bool, optional): use gpu. Default is True.
     """
 
-    def __init__(self, datamanager, model, optimizer=None, scheduler=None, use_cpu=False):
+    def __init__(self, datamanager, model, reg_cfg, optimizer=None, scheduler=None, use_gpu=True):
         self.datamanager = datamanager
         self.model = model
         self.optimizer = optimizer
         self.scheduler = scheduler
-        self.use_gpu = (torch.cuda.is_available() and not use_cpu)
+        self.use_gpu = (torch.cuda.is_available() and use_gpu)
+        self.writer = None
+        self.regularizer = get_regularizer(reg_cfg)
+        if reg_cfg.of:
+            self.of_regularizer = OFPenalty(reg_cfg.of_beta)
+        else:
+            self.of_regularizer = None
 
         # check attributes
         if not isinstance(self.model, nn.Module):
@@ -103,6 +105,9 @@ class Engine(object):
             )
             return
 
+        if self.writer is None:
+            self.writer = SummaryWriter(save_dir)
+
         if visactmap:
             self.visactmap(testloader, save_dir, self.datamanager.width, self.datamanager.height, print_freq)
             return
@@ -112,7 +117,7 @@ class Engine(object):
 
         for epoch in range(start_epoch, max_epoch):
             self.train(epoch, max_epoch, trainloader, fixbase_epoch, open_layers, print_freq)
-            
+
             if (epoch+1)>=start_eval and eval_freq>0 and (epoch+1)%eval_freq==0 and (epoch+1)!=max_epoch:
                 rank1 = self.test(
                     epoch,
@@ -123,7 +128,8 @@ class Engine(object):
                     visrank_topk=visrank_topk,
                     save_dir=save_dir,
                     use_metric_cuhk03=use_metric_cuhk03,
-                    ranks=ranks
+                    ranks=ranks,
+                    iteration=epoch*len(trainloader)
                 )
                 self._save_checkpoint(epoch, rank1, save_dir)
 
@@ -138,13 +144,16 @@ class Engine(object):
                 visrank_topk=visrank_topk,
                 save_dir=save_dir,
                 use_metric_cuhk03=use_metric_cuhk03,
-                ranks=ranks
+                ranks=ranks,
+                iteration=(epoch + 1)*len(trainloader)
             )
             self._save_checkpoint(epoch, rank1, save_dir)
 
         elapsed = round(time.time() - time_start)
         elapsed = str(datetime.timedelta(seconds=elapsed))
         print('Elapsed {}'.format(elapsed))
+        if self.writer is not None:
+            self.writer.close()
 
     def train(self):
         r"""Performs training on source datasets for one epoch.
@@ -152,19 +161,19 @@ class Engine(object):
         This will be called every epoch in ``run()``, e.g.
 
         .. code-block:: python
-            
+
             for epoch in range(start_epoch, max_epoch):
                 self.train(some_arguments)
 
         .. note::
-            
+
             This must be implemented in subclasses.
         """
         raise NotImplementedError
 
     def test(self, epoch, testloader, dist_metric='euclidean', normalize_feature=False,
              visrank=False, visrank_topk=10, save_dir='', use_metric_cuhk03=False,
-             ranks=[1, 5, 10, 20], rerank=False):
+             ranks=[1, 5, 10, 20], rerank=False, iteration=0):
         r"""Tests model on target datasets.
 
         .. note::
@@ -179,7 +188,7 @@ class Engine(object):
             but not a must. Please refer to the source code for more details.
         """
         targets = list(testloader.keys())
-        
+
         for name in targets:
             domain = 'source' if name in self.datamanager.sources else 'target'
             print('##### Evaluating {} ({}) #####'.format(name, domain))
@@ -197,19 +206,18 @@ class Engine(object):
                 save_dir=save_dir,
                 use_metric_cuhk03=use_metric_cuhk03,
                 ranks=ranks,
-                rerank=rerank
+                rerank=rerank,
+                iteration=iteration
             )
-        
+
         return rank1
 
     @torch.no_grad()
     def _evaluate(self, epoch, dataset_name='', queryloader=None, galleryloader=None,
                   dist_metric='euclidean', normalize_feature=False, visrank=False,
                   visrank_topk=10, save_dir='', use_metric_cuhk03=False, ranks=[1, 5, 10, 20],
-                  rerank=False):
+                  rerank=False, iteration=0):
         batch_time = AverageMeter()
-
-        self.model.eval()
 
         print('Extracting features from query set ...')
         qf, q_pids, q_camids = [], [], [] # query features, query person IDs and query camera IDs
@@ -231,7 +239,6 @@ class Engine(object):
 
         print('Extracting features from gallery set ...')
         gf, g_pids, g_camids = [], [], [] # gallery features, gallery person IDs and gallery camera IDs
-        end = time.time()
         for batch_idx, data in enumerate(galleryloader):
             imgs, pids, camids = self._parse_data_for_eval(data)
             if self.use_gpu:
@@ -274,6 +281,10 @@ class Engine(object):
             g_camids,
             use_metric_cuhk03=use_metric_cuhk03
         )
+        if self.writer is not None:
+            self.writer.add_scalar('Val/mAP', mAP, iteration)
+            for r in ranks:
+                self.writer.add_scalar('Val/Rank-' + str(r), cmc[r - 1], iteration)
 
         print('** Results **')
         print('mAP: {:.1%}'.format(mAP))
@@ -306,7 +317,7 @@ class Engine(object):
             - Zhou et al. Omni-Scale Feature Learning for Person Re-Identification. ICCV, 2019.
         """
         self.model.eval()
-        
+
         imagenet_mean = [0.485, 0.456, 0.406]
         imagenet_std = [0.229, 0.224, 0.225]
 
@@ -321,7 +332,7 @@ class Engine(object):
                 imgs, paths = data[0], data[3]
                 if self.use_gpu:
                     imgs = imgs.cuda()
-                
+
                 # forward to get convolutional feature maps
                 try:
                     outputs = self.model(imgs, return_featuremaps=True)
@@ -329,20 +340,20 @@ class Engine(object):
                     raise TypeError('forward() got unexpected keyword argument "return_featuremaps". ' \
                                     'Please add return_featuremaps as an input argument to forward(). When ' \
                                     'return_featuremaps=True, return feature maps only.')
-                
+
                 if outputs.dim() != 4:
                     raise ValueError('The model output is supposed to have ' \
                                      'shape of (b, c, h, w), i.e. 4 dimensions, but got {} dimensions. '
                                      'Please make sure you set the model output at eval mode '
                                      'to be the last convolutional feature maps'.format(outputs.dim()))
-                
+
                 # compute activation maps
                 outputs = (outputs**2).sum(1)
                 b, h, w = outputs.size()
                 outputs = outputs.view(b, h*w)
                 outputs = F.normalize(outputs, p=2, dim=1)
                 outputs = outputs.view(b, h, w)
-                
+
                 if self.use_gpu:
                     imgs, outputs = imgs.cpu(), outputs.cpu()
 
@@ -350,21 +361,21 @@ class Engine(object):
                     # get image name
                     path = paths[j]
                     imname = osp.basename(osp.splitext(path)[0])
-                    
+
                     # RGB image
                     img = imgs[j, ...]
                     for t, m, s in zip(img, imagenet_mean, imagenet_std):
                         t.mul_(s).add_(m).clamp_(0, 1)
                     img_np = np.uint8(np.floor(img.numpy() * 255))
                     img_np = img_np.transpose((1, 2, 0)) # (c, h, w) -> (h, w, c)
-                    
+
                     # activation map
                     am = outputs[j, ...].numpy()
                     am = cv2.resize(am, (width, height))
                     am = 255 * (am - np.max(am)) / (np.max(am) - np.min(am) + 1e-12)
                     am = np.uint8(np.floor(am))
                     am = cv2.applyColorMap(am, cv2.COLORMAP_JET)
-                    
+
                     # overlapped
                     overlapped = img_np * 0.3 + am * 0.7
                     overlapped[overlapped>255] = 255

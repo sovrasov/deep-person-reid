@@ -2,8 +2,13 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from .am_softmax import AMSoftmaxLoss, AngleSimpleLinear
+from .adacos import AdaCosLoss
+from .d_softmax import DSoftmaxLoss
 from .cross_entropy_loss import CrossEntropyLoss
 from .hard_mine_triplet_loss import TripletLoss
+from .regularizers import get_regularizer, OFPenalty
+from .metric import MetricLosses
 
 
 def DeepSupervision(criterion, xs, y):

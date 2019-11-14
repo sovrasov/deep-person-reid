@@ -2,8 +2,6 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 
-import sys
-import os
 import os.path as osp
 
 from torchreid.data.datasets import ImageDataset
@@ -35,7 +33,7 @@ class MSMT17(ImageDataset):
         Wei et al. Person Transfer GAN to Bridge Domain Gap for Person Re-Identification. CVPR 2018.
 
     URL: `<http://www.pkuvmc.com/publications/msmt17.html>`_
-    
+
     Dataset statistics:
         - identities: 4101.
         - images: 32621 (train) + 11659 (query) + 82161 (gallery).
@@ -48,7 +46,7 @@ class MSMT17(ImageDataset):
         self.root = osp.abspath(osp.expanduser(root))
         self.dataset_dir = osp.join(self.root, self.dataset_dir)
         self.download_dataset(self.dataset_dir, self.dataset_url)
-        
+
         has_main_dir = False
         for main_dir in VERSION_DICT:
             if osp.exists(osp.join(self.dataset_dir, main_dir)):
@@ -57,7 +55,7 @@ class MSMT17(ImageDataset):
                 has_main_dir = True
                 break
         assert has_main_dir, 'Dataset folder not found'
-        
+
         self.train_dir = osp.join(self.dataset_dir, main_dir, train_dir)
         self.test_dir = osp.join(self.dataset_dir, main_dir, test_dir)
         self.list_train_path = osp.join(self.dataset_dir, main_dir, 'list_train.txt')
@@ -87,7 +85,7 @@ class MSMT17(ImageDataset):
     def process_dir(self, dir_path, list_path):
         with open(list_path, 'r') as txt:
             lines = txt.readlines()
-        
+
         data = []
 
         for img_idx, img_info in enumerate(lines):
@@ -96,5 +94,5 @@ class MSMT17(ImageDataset):
             camid = int(img_path.split('_')[2]) - 1 # index starts from 0
             img_path = osp.join(dir_path, img_path)
             data.append((img_path, pid, camid))
-        
+
         return data

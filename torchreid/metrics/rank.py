@@ -3,9 +3,7 @@ from __future__ import print_function
 from __future__ import division
 
 import numpy as np
-import copy
 from collections import defaultdict
-import sys
 import warnings
 
 try:
@@ -13,11 +11,18 @@ try:
     IS_CYTHON_AVAI = True
 except ImportError:
     IS_CYTHON_AVAI = False
+
+try:
+    from rank_cy import evaluate_cy
+    IS_CYTHON_AVAI = True
+except ImportError:
+    IS_CYTHON_AVAI = False
+
+if not IS_CYTHON_AVAI:
     warnings.warn(
         'Cython evaluation (very fast so highly recommended) is '
         'unavailable, now use python evaluation.'
     )
-
 
 def eval_cuhk03(distmat, q_pids, g_pids, q_camids, g_camids, max_rank):
     """Evaluation with cuhk03 metric
@@ -26,11 +31,11 @@ def eval_cuhk03(distmat, q_pids, g_pids, q_camids, g_camids, max_rank):
     """
     num_repeats = 10
     num_q, num_g = distmat.shape
-    
+
     if num_g < max_rank:
         max_rank = num_g
         print('Note: number of gallery samples is quite small, got {}'.format(num_g))
-    
+
     indices = np.argsort(distmat, axis=1)
     matches = (g_pids[indices] == q_pids[:, np.newaxis]).astype(np.int32)
 
@@ -38,7 +43,7 @@ def eval_cuhk03(distmat, q_pids, g_pids, q_camids, g_camids, max_rank):
     all_cmc = []
     all_AP = []
     num_valid_q = 0. # number of valid query
-    
+
     for q_idx in range(num_q):
         # get query pid and camid
         q_pid = q_pids[q_idx]
@@ -71,7 +76,7 @@ def eval_cuhk03(distmat, q_pids, g_pids, q_camids, g_camids, max_rank):
             _cmc = masked_raw_cmc.cumsum()
             _cmc[_cmc > 1] = 1
             cmc += _cmc[:max_rank].astype(np.float32)
-        
+
         cmc /= num_repeats
         all_cmc.append(cmc)
         # compute AP
@@ -97,11 +102,11 @@ def eval_market1501(distmat, q_pids, g_pids, q_camids, g_camids, max_rank):
     Key: for each query identity, its gallery images from the same camera view are discarded.
     """
     num_q, num_g = distmat.shape
-    
+
     if num_g < max_rank:
         max_rank = num_g
         print('Note: number of gallery samples is quite small, got {}'.format(num_g))
-    
+
     indices = np.argsort(distmat, axis=1)
     matches = (g_pids[indices] == q_pids[:, np.newaxis]).astype(np.int32)
 
@@ -109,7 +114,7 @@ def eval_market1501(distmat, q_pids, g_pids, q_camids, g_camids, max_rank):
     all_cmc = []
     all_AP = []
     num_valid_q = 0. # number of valid query
-    
+
     for q_idx in range(num_q):
         # get query pid and camid
         q_pid = q_pids[q_idx]

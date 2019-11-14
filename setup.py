@@ -2,6 +2,7 @@ from setuptools import find_packages, setup
 from distutils.extension import Extension
 from Cython.Build import cythonize
 import numpy as np
+import os.path as osp
 
 
 def readme():
@@ -34,26 +35,23 @@ ext_modules = [
 ]
 
 
+def get_requirements(filename='requirements.txt'):
+    here = osp.dirname(osp.realpath(__file__))
+    with open(osp.join(here, filename), 'r') as f:
+        requires = [line.replace('\n', '') for line in f.readlines()]
+    return requires
+
+
 setup(
     name='torchreid',
     version=find_version(),
-    description='Pytorch framework for deep-learning person re-identification',
+    description='A library for deep learning person re-identification in PyTorch',
     author='Kaiyang Zhou',
-    author_email='k.zhou.vision@gmail.com',
     license='MIT',
     long_description=readme(),
     url='https://github.com/KaiyangZhou/deep-person-reid',
     packages=find_packages(),
-    install_requires=[
-        'numpy',
-        'Cython',
-        'h5py',
-        'Pillow',
-        'six',
-        'scipy>=1.0.0',
-        'torch>=0.4.1',
-        'torchvision>=0.2.1'
-    ],
+    install_requires=get_requirements(),
     keywords=[
         'Person Re-Identification',
         'Deep Learning',

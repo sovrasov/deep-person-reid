@@ -65,7 +65,7 @@ We provide a tool in ``torchreid.utils.model_complexity.py`` to automatically co
     # count flops for all layers including ReLU and BatchNorm
     utils.compute_model_complexity(model, (1, 3, 256, 128), verbose=True, only_conv_linear=False)
 
-It is worth noting that (1) this function only provides an estimate of the theoretical time complexity rather than the actual running time which depends on implementations and hardware, and (2) the FLOPs is only counted for layers that are used at test time. This means that redundant layers such as person ID classification layer will be ignored as it is discarded when doing feature extraction. Note that the inference graph depends on how you construct the computations in ``forward()``.
+Note that (1) this function only provides an estimate of the theoretical time complexity rather than the actual running time which depends on implementations and hardware; (2) the FLOPs is only counted for layers that are used at test time. This means that redundant layers such as person ID classification layer will be ignored. The inference graph depends on how you define the computations in ``forward()``.
 
 
 Combine multiple datasets
@@ -117,7 +117,7 @@ This can be easily done by setting ``combineall=True`` when instantiating a data
         combineall=True # it's me, here
     )
 
-More specifically, with ``combineall=False``, you would get
+More specifically, with ``combineall=False``, you will get
 
 .. code-block:: none
     
@@ -130,7 +130,7 @@ More specifically, with ``combineall=False``, you would get
       gallery  |   751 |    15913 |         6
       ---------------------------------------
 
-with ``combineall=True``, you would get
+with ``combineall=True``, you will get
 
 .. code-block:: none
     
@@ -168,9 +168,9 @@ Please refer to :ref:`torchreid_optim` for more details.
 
 Do two-stepped transfer learning
 -------------------------------------
-To prevent the pretrained layers to be damaged by harmful gradients back-propagated from randomly initialized layers, one can adopt the *two-stepped transfer learning strategy* presented in `Deep Transfer Learning for Person Re-identification <https://arxiv.org/abs/1611.05244>`_. The basic idea is to pretrain the randomly initialized layers for few epochs while keeping the base layers frozen before training all layers end-to-end.
+To prevent the pretrained layers from being damaged by harmful gradients back-propagated from randomly initialized layers, one can adopt the *two-stepped transfer learning strategy* presented in `Deep Transfer Learning for Person Re-identification <https://arxiv.org/abs/1611.05244>`_. The basic idea is to pretrain the randomly initialized layers for few epochs while keeping the base layers frozen before training all layers end-to-end.
 
-This has been implemented in ``Engine.train()`` (see :ref:`torchreid_engine`). The arguments to enable this feature are ``fixbase_epoch`` and ``open_layers``. Intuitively, ``fixbase_epoch`` denotes the number of epochs to keep the base layers frozen; ``open_layers`` means which layers are open for training.
+This has been implemented in ``Engine.train()`` (see :ref:`torchreid_engine`). The arguments related to this feature are ``fixbase_epoch`` and ``open_layers``. Intuitively, ``fixbase_epoch`` denotes the number of epochs to keep the base layers frozen; ``open_layers`` means which layer is open for training.
 
 For example, say you want to pretrain the classification layer named "classifier" in ResNet50 for 5 epochs before training all layers, you can do
 
@@ -193,32 +193,21 @@ Note that ``fixbase_epoch`` is counted into ``max_epoch``. In the above example,
 
 Test a trained model
 ----------------------
-You can load a trained model using :code:`torchreid.utils.load_pretrained_weights(model, weight_path)` and set ``test_only=True`` in ``engine.run()``. If you use ``scripts/main.py``, you can do ``--evaluate --load-weights PATH_TO_WEIGHTS``.
+You can load a trained model using :code:`torchreid.utils.load_pretrained_weights(model, weight_path)` and set ``test_only=True`` in ``engine.run()``.
 
 
-Visualize ranked results
--------------------------
-Ranked images can be visualized by setting ``visrank`` to True in ``engine.run()``. ``visrank_topk`` determines the top-k images to be visualized (Default is ``visrank_topk=10``). Note that ``visrank`` can only be used in test mode, i.e. ``test_only=True`` in ``engine.run()``. The images will be saved under ``save_dir/visrank_DATASETNAME`` where each image sketches the ranked list given a query. An example is shown below. Red and green denote incorrect and correct matches respectively.
+Visualize learning curves with tensorboard
+--------------------------------------------
+The ``SummaryWriter()`` for tensorboard will be automatically initialized in ``engine.run()`` when you are training your model. Therefore, you do not need to do extra jobs. After the training is done, the ``*tf.events*`` file will be saved in ``save_dir``. Then, you just call ``tensorboard --logdir=your_save_dir`` in your terminal and visit ``http://localhost:6006/`` in a web browser. See `pytorch tensorboard <https://pytorch.org/docs/stable/tensorboard.html>`_ for further information.
 
-.. image:: figures/ranked_results.jpg
+
+Visualize ranking results
+---------------------------
+This can be achieved by setting ``visrank`` to true in ``engine.run()``. ``visrank_topk`` determines the top-k images to be visualized (Default is ``visrank_topk=10``). Note that ``visrank`` can only be used in test mode, i.e. ``test_only=True`` in ``engine.run()``. The output will be saved under ``save_dir/visrank_DATASETNAME`` where each plot contains the top-k similar gallery images given a query. An example is shown below where red and green denote incorrect and correct matches respectively.
+
+.. image:: figures/ranking_results.jpg
     :width: 800px
     :align: center
-
-An example command line using ``scripts/main.py`` is
-
-.. code-block:: shell
-
-    python scripts/main.py \
-    --root $DATA \
-    -s market1501 \
-    -t market1501 \
-    -a osnet_x1_0 \
-    --load-weights PATH_TO_WEIGHTS \
-    --evaluate \
-    --visrank \
-    --visrank-topk 15 \
-    --save-dir log/eval-osnet_x1_0 \
-    --gpu-devices 0
 
 
 Visualize activation maps
@@ -228,21 +217,6 @@ To understand where the CNN focuses on to extract features for ReID, you can vis
 .. image:: figures/actmap.jpg
     :width: 300px
     :align: center
-
-
-An example command line using ``scripts/main.py`` is
-
-.. code-block:: shell
-
-    python scripts/main.py \
-    --root $DATA \
-    -s market1501 \
-    -t market1501 \
-    -a osnet_x1_0 \
-    --load-weights PATH_TO_WEIGHTS \
-    --visactmap \
-    --save-dir log/eval-osnet_x1_0 \
-    --gpu-devices 0
 
 
 .. note::
@@ -264,6 +238,7 @@ Use your own dataset
     import os.path as osp
 
     from torchreid.data import ImageDataset
+
 
     class NewDataset(ImageDataset):
         dataset_dir = 'new_dataset'
@@ -326,4 +301,4 @@ Use your own dataset
 
 Design your own Engine
 ------------------------
-A new Engine should be designed if you have your own loss function. The base Engine class ``torchreid.engine.Engine`` has implemented some generic methods which you want to inherit to avoid re-writing. Please refer to the source code for more details. You are suggested to see how ``ImageSoftmaxEngine`` and ``ImageTripletEngine`` are constructed (also ``VideoSoftmaxEngine`` and ``VideoTripletEngine``). All you need to implement might be just a ``train()`` function.
+A new Engine should be designed if you have your own loss function. The base Engine class ``torchreid.engine.Engine`` has implemented some generic methods which you can inherit to avoid re-writing. Please refer to the source code for more details. You are suggested to see how ``ImageSoftmaxEngine`` and ``ImageTripletEngine`` are constructed (also ``VideoSoftmaxEngine`` and ``VideoTripletEngine``). All you need to implement might be just a ``train()`` function.

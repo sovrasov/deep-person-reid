@@ -1,6 +1,11 @@
 Torchreid
 ===========
-Torchreid is a library built on `PyTorch <https://pytorch.org/>`_ for deep-learning person re-identification.
+.. image:: https://img.shields.io/github/license/KaiyangZhou/deep-person-reid
+   :alt: GitHub license
+   :target: https://github.com/KaiyangZhou/deep-person-reid/blob/master/LICENSE
+
+
+Torchreid is a library for deep-learning person re-identification in `PyTorch <https://pytorch.org/>`_.
 
 It features:
 
@@ -15,80 +20,47 @@ It features:
 - implementations of state-of-the-art deep reid models
 - access to pretrained reid models
 - advanced training techniques
-- visualization tools
+- visualization tools (tensorboard, ranks, etc.)
 
-
-Documentation: https://kaiyangzhou.github.io/deep-person-reid/.
 
 Code: https://github.com/KaiyangZhou/deep-person-reid.
 
+Documentation: https://kaiyangzhou.github.io/deep-person-reid/.
+
+How-to instructions: https://kaiyangzhou.github.io/deep-person-reid/user_guide.
+
 Model zoo: https://kaiyangzhou.github.io/deep-person-reid/MODEL_ZOO.
+
+Tech report: https://arxiv.org/abs/1910.10093.
+
+You can find some research projects that are built on top of Torchreid `here <https://github.com/KaiyangZhou/deep-person-reid/tree/master/projects>`_.
 
 
 Installation
 ---------------
 
-The code works with both python2 and python3.
+Make sure `conda <https://www.anaconda.com/distribution/>`_ is installed.
 
-Option 1
-^^^^^^^^^^^^
-1. Install PyTorch and torchvision following the `official instructions <https://pytorch.org/>`_.
-2. Clone ``deep-person-reid`` to your preferred directory
-
-.. code-block:: bash
-    
-    $ git clone https://github.com/KaiyangZhou/deep-person-reid.git
-
-3. :code:`cd` to :code:`deep-person-reid` and install dependencies
-
-.. code-block:: bash
-    
-    $ cd deep-person-reid/
-    $ pip install -r requirements.txt
-
-4. Install ``torchreid``
-
-.. code-block:: bash
-    
-    $ python setup.py install # or python3
-    $ # If you wanna modify the source code without
-    $ # the need to rebuild it, you can do
-    $ # python setup.py develop
-
-Option 2 (with conda)
-^^^^^^^^^^^^^^^^^^^^^^^^
-We also provide an environment.yml file for easy setup with conda.
-
-1. Clone ``deep-person-reid`` to your preferred directory
-
-.. code-block:: bash
-    
-    $ git clone https://github.com/KaiyangZhou/deep-person-reid.git
-
-2. :code:`cd` to :code:`deep-person-reid` and create an environment (named ``torchreid``)
-
-.. code-block:: bash
-    
-    $ cd deep-person-reid/
-    $ conda env create -f environment.yml
-
-In doing so, the dependencies will be automatically installed.
-
-3. Install PyTorch and torchvision (select the proper cuda version to suit your machine)
-
-.. code-block:: bash
-    
-    $ conda activate torchreid
-    $ conda install pytorch torchvision cudatoolkit=9.0 -c pytorch
-
-4. Install ``torchreid``
 
 .. code-block:: bash
 
-    $ python setup.py install
-    $ # If you wanna modify the source code without
-    $ # the need to rebuild it, you can do
-    $ # python setup.py develop
+    # cd to your preferred directory and clone this repo
+    git clone https://github.com/KaiyangZhou/deep-person-reid.git
+
+    # create environment
+    cd deep-person-reid/
+    conda create --name torchreid python=3.7
+    conda activate torchreid
+
+    # install dependencies
+    # make sure `which python` and `which pip` point to the correct path
+    pip install -r requirements.txt
+
+    # install torch and torchvision (select the proper cuda version to suit your machine)
+    conda install pytorch torchvision cudatoolkit=9.0 -c pytorch
+
+    # install torchreid (don't need to re-build it if you modify the source code)
+    python setup.py develop
 
 
 Get started: 30 seconds to Torchreid
@@ -106,9 +78,11 @@ Get started: 30 seconds to Torchreid
     datamanager = torchreid.data.ImageDataManager(
         root='reid-data',
         sources='market1501',
+        targets='market1501',
         height=256,
         width=128,
-        batch_size=32,
+        batch_size_train=32,
+        batch_size_test=100,
         transforms=['random_flip', 'random_crop']
     )
 
@@ -164,27 +138,71 @@ Get started: 30 seconds to Torchreid
 
 A unified interface
 -----------------------
-In "deep-person-reid/scripts/", we provide a unified interface including a default parser file ``default_parser.py`` and the main script ``main.py``. For example, to train an image reid model on Market1501 using softmax, you can do
+In "deep-person-reid/scripts/", we provide a unified interface to train and test a model. See "scripts/main.py" and "scripts/default_config.py" for more details. "configs/" contains some predefined configs which you can use as a starting point.
+
+Below we provide an example to train and test `OSNet (Zhou et al. ICCV'19) <https://arxiv.org/abs/1905.00953>`_. Assume :code:`PATH_TO_DATA` is the directory containing reid datasets.
+
+Conventional setting
+^^^^^^^^^^^^^^^^^^^^^
+
+To train OSNet on Market1501, do
 
 .. code-block:: bash
-    
-    python main.py \
-    --root path/to/reid-data \
-    --app image \
-    --loss softmax \
-    --label-smooth \
-    -s market1501 \
-    -a resnet50 \
-    --optim adam \
-    --lr 0.0003 \
-    --max-epoch 60 \
-    --stepsize 20 40 \
-    --batch-size 32 \
-    --transforms random_flip random_crop \
-    --save-dir log/resnet50-market1501-softmax \
+
+    python scripts/main.py \
+    --config-file configs/im_osnet_x1_0_softmax_256x128_amsgrad_cosine.yaml \
+    --transforms random_flip random_erase \
+    --root $PATH_TO_DATA \
     --gpu-devices 0
 
-Please refer to ``default_parser.py`` and ``main.py`` for more details.
+
+The config file sets Market1501 as the default dataset. If you wanna use DukeMTMC-reID, do
+
+.. code-block:: bash
+
+    python scripts/main.py \
+    --config-file configs/im_osnet_x1_0_softmax_256x128_amsgrad_cosine.yaml \
+    -s dukemtmcreid \
+    -t dukemtmcreid \
+    --transforms random_flip random_erase \
+    --root $PATH_TO_DATA \
+    --gpu-devices 0 \
+    data.save_dir log/osnet_x1_0_dukemtmcreid_softmax_cosinelr
+
+The code will automatically (download and) load the ImageNet pretrained weights. After the training is done, the model will be saved as "log/osnet_x1_0_market1501_softmax_cosinelr/model.pth.tar-250". Under the same folder, you can find the `tensorboard <https://pytorch.org/docs/stable/tensorboard.html>`_ file. To visualize the learning curves using tensorboard, you can run :code:`tensorboard --logdir=log/osnet_x1_0_market1501_softmax_cosinelr` in the terminal and visit :code:`http://localhost:6006/` in your web browser.
+
+Evaluation is automatically performed at the end of training. To run the test again using the trained model, do
+
+.. code-block:: bash
+
+    python scripts/main.py \
+    --config-file configs/im_osnet_x1_0_softmax_256x128_amsgrad_cosine.yaml \
+    --root $PATH_TO_DATA \
+    --gpu-devices 0 \
+    model.load_weights log/osnet_x1_0_market1501_softmax_cosinelr/model.pth.tar-250 \
+    test.evaluate True
+
+
+Cross-domain setting
+^^^^^^^^^^^^^^^^^^^^^
+
+Suppose you wanna train OSNet on DukeMTMC-reID and test its performance on Market1501, you can do
+
+.. code-block:: bash
+
+    python scripts/main.py \
+    --config-file configs/im_osnet_x1_0_softmax_256x128_amsgrad.yaml \
+    -s dukemtmcreid \
+    -t market1501 \
+    --transforms random_flip color_jitter \
+    --root $PATH_TO_DATA \
+    --gpu-devices 0
+
+Here we only test the cross-domain performance. However, if you also want to test the performance on the source dataset, i.e. DukeMTMC-reID, you can set :code:`-t dukemtmcreid market1501`, which will evaluate the model on the two datasets separately.
+
+Different from the same-domain setting, here we replace :code:`random_erase` with :code:`color_jitter`. This can improve the generalization performance on the unseen target dataset.
+
+Pretrained models are available in the `Model Zoo <https://kaiyangzhou.github.io/deep-person-reid/MODEL_ZOO.html>`_.
 
 
 Datasets
@@ -222,6 +240,7 @@ ImageNet classification models
 - `Inception-ResNet-V2 <https://arxiv.org/abs/1602.07261>`_
 - `Inception-V4 <https://arxiv.org/abs/1602.07261>`_
 - `Xception <https://arxiv.org/abs/1610.02357>`_
+- `IBN-Net <https://arxiv.org/abs/1807.09441>`_
 
 Lightweight models
 ^^^^^^^^^^^^^^^^^^^
@@ -239,6 +258,7 @@ ReID-specific models
 - `PCB <https://arxiv.org/abs/1711.09349>`_
 - `MLFN <https://arxiv.org/abs/1803.09132>`_
 - `OSNet <https://arxiv.org/abs/1905.00953>`_
+- `OSNet-AIN <https://arxiv.org/abs/1910.06827>`_
 
 Losses
 ------
@@ -248,14 +268,27 @@ Losses
 
 Citation
 ---------
-If you find this code useful to your research, please cite the following publication.
+If you find this code useful to your research, please cite the following papers.
 
 .. code-block:: bash
+
+    @article{torchreid,
+      title={Torchreid: A Library for Deep Learning Person Re-Identification in Pytorch},
+      author={Zhou, Kaiyang and Xiang, Tao},
+      journal={arXiv preprint arXiv:1910.10093},
+      year={2019}
+    }
     
-    @article{zhou2019osnet,
+    @inproceedings{zhou2019osnet,
       title={Omni-Scale Feature Learning for Person Re-Identification},
       author={Zhou, Kaiyang and Yang, Yongxin and Cavallaro, Andrea and Xiang, Tao},
-      journal={arXiv preprint arXiv:1905.00953},
+      booktitle={ICCV},
       year={2019}
     }
 
+    @article{zhou2019learning,
+      title={Learning Generalisable Omni-Scale Representations for Person Re-Identification},
+      author={Zhou, Kaiyang and Yang, Yongxin and Cavallaro, Andrea and Xiang, Tao},
+      journal={arXiv preprint arXiv:1910.06827},
+      year={2019}
+    }

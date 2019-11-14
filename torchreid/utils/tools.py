@@ -11,7 +11,6 @@ import os.path as osp
 import time
 import errno
 import json
-from collections import OrderedDict
 import warnings
 import random
 import numpy as np
@@ -112,8 +111,7 @@ def read_image(path):
             img = Image.open(path).convert('RGB')
             got_img = True
         except IOError:
-            print('IOError incurred when reading "{}". Will redo. Don\'t worry. Just chill.'.format(img_path))
-            pass
+            print('IOError incurred when reading "{}". Will redo. Don\'t worry. Just chill.'.format(path))
     return img
 
 

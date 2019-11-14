@@ -4,11 +4,9 @@ from __future__ import print_function
 __all__ = ['visualize_ranked_results']
 
 import numpy as np
-import os
 import os.path as osp
 import shutil
 import cv2
-from matplotlib import pyplot as plt
 
 from .tools import mkdir_if_missing
 
@@ -60,7 +58,7 @@ def visualize_ranked_results(distmat, dataset, data_type, width=128, height=256,
             prefix: string
             matched: bool
         """
-        if isinstance(src, tuple) or isinstance(src, list):
+        if isinstance(src, (tuple, list)):
             if prefix == 'gallery':
                 suffix = 'TRUE' if matched else 'FALSE'
                 dst = osp.join(dst, prefix + '_top' + str(rank).zfill(3)) + '_' + suffix
@@ -75,17 +73,19 @@ def visualize_ranked_results(distmat, dataset, data_type, width=128, height=256,
 
     for q_idx in range(num_q):
         qimg_path, qpid, qcamid = query[q_idx]
-        num_cols = topk + 1
-        grid_img = 255 * np.ones((height, num_cols*width+topk*GRID_SPACING+QUERY_EXTRA_SPACING, 3), dtype=np.uint8)
-
+        qimg_path_name = qimg_path[0] if isinstance(qimg_path, (tuple, list)) else qimg_path
+        
         if data_type == 'image':
             qimg = cv2.imread(qimg_path)
             qimg = cv2.resize(qimg, (width, height))
             qimg = cv2.copyMakeBorder(qimg, BW, BW, BW, BW, cv2.BORDER_CONSTANT, value=(0, 0, 0))
-            qimg = cv2.resize(qimg, (width, height)) # resize twice to ensure that the border width is consistent across images
+            # resize twice to ensure that the border width is consistent across images
+            qimg = cv2.resize(qimg, (width, height))
+            num_cols = topk + 1
+            grid_img = 255 * np.ones((height, num_cols*width+topk*GRID_SPACING+QUERY_EXTRA_SPACING, 3), dtype=np.uint8)
             grid_img[:, :width, :] = qimg
         else:
-            qdir = osp.join(save_dir, osp.basename(osp.splitext(qimg_path)[0]))
+            qdir = osp.join(save_dir, osp.basename(osp.splitext(qimg_path_name)[0]))
             mkdir_if_missing(qdir)
             _cp_img_to(qimg_path, qdir, rank=0, prefix='query')
 
@@ -112,8 +112,9 @@ def visualize_ranked_results(distmat, dataset, data_type, width=128, height=256,
                 if rank_idx > topk:
                     break
 
-        imname = osp.basename(osp.splitext(qimg_path)[0])
-        cv2.imwrite(osp.join(save_dir, imname+'.jpg'), grid_img)
+        if data_type == 'image':
+            imname = osp.basename(osp.splitext(qimg_path_name)[0])
+            cv2.imwrite(osp.join(save_dir, imname+'.jpg'), grid_img)
 
         if (q_idx+1) % 100 == 0:
             print('- done {}/{}'.format(q_idx+1, num_q))

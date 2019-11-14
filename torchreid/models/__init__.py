@@ -1,9 +1,12 @@
 from __future__ import absolute_import
+from functools import partial
 
 import torch
 
 from .resnet import *
 from .resnetmid import *
+from .resnet_ibn_a import *
+from .resnet_ibn_b import *
 from .senet import *
 from .densenet import *
 from .inceptionresnetv2 import *
@@ -21,6 +24,7 @@ from .hacnn import *
 from .pcb import *
 from .mlfn import *
 from .osnet import *
+from .osnet_ain import *
 
 
 __model_factory = {
@@ -46,6 +50,8 @@ __model_factory = {
     'inceptionresnetv2': inceptionresnetv2,
     'inceptionv4': inceptionv4,
     'xception': xception,
+    'resnet50_ibn_a': resnet50_ibn_a,
+    'resnet50_ibn_b': resnet50_ibn_b,
     # lightweight models
     'nasnsetmobile': nasnetamobile,
     'mobilenetv2_x1_0': mobilenetv2_x1_0,
@@ -67,9 +73,12 @@ __model_factory = {
     'mlfn': mlfn,
     'osnet_x1_0': osnet_x1_0,
     'osnet_x0_75': osnet_x0_75,
+    'osnet_x0_75_ibn': partial(osnet_x0_75, IN=True),
     'osnet_x0_5': osnet_x0_5,
+    'osnet_x0_5_ibn': partial(osnet_x0_5, IN=True),
     'osnet_x0_25': osnet_x0_25,
-    'osnet_ibn_x1_0': osnet_ibn_x1_0
+    'osnet_ibn_x1_0': osnet_ibn_x1_0,
+    'osnet_ain_x1_0': osnet_ain_x1_0
 }
 
 
@@ -83,7 +92,12 @@ def show_avai_models():
     print(list(__model_factory.keys()))
 
 
-def build_model(name, num_classes, loss='softmax', pretrained=True, use_gpu=True):
+ACT_MAP = {'relu': torch.nn.ReLU,
+           'prelu': torch.nn.PReLU}
+
+
+def build_model(name, num_classes, loss='softmax', pretrained=True,
+                use_gpu=True, dropout_prob=0.0, feature_dim=512, activation='relu', in_first=False):
     """A function wrapper for building a model.
 
     Args:
@@ -109,5 +123,9 @@ def build_model(name, num_classes, loss='softmax', pretrained=True, use_gpu=True
         num_classes=num_classes,
         loss=loss,
         pretrained=pretrained,
-        use_gpu=use_gpu
+        use_gpu=use_gpu,
+        dropout_prob=dropout_prob,
+        feature_dim=feature_dim,
+        activation=ACT_MAP[activation],
+        IN_first=in_first
     )
