@@ -39,7 +39,7 @@ def main():
     load_pretrained_weights(model, cfg.model.load_weights)
     model.eval()
 
-    _, transform = build_transforms(cfg.data.height, cfg.data.width)
+    _, transform = build_transforms(cfg.data.height, cfg.data.width, cfg.data.transforms)
 
     input_size = (cfg.data.height, cfg.data.width, 3)
     img = np.random.rand(*input_size).astype(np.float32)
