@@ -246,7 +246,7 @@ class OSNet(nn.Module):
         self.conv1 = ConvLayer(3, channels[0], 7, stride=2, padding=3, IN=IN_first)
         self.maxpool = nn.MaxPool2d(3, stride=2, padding=1)
         self.conv2 = self._make_layer(blocks[0], layers[0], channels[0], channels[1],
-                                      reduce_spatial_size=True, IN=IN, dropout_p=dropout_prob)
+                                      reduce_spatial_size=True, IN=IN_first, dropout_p=dropout_prob)
         self.conv3 = self._make_layer(blocks[1], layers[1], channels[1], channels[2],
                                       reduce_spatial_size=True, dropout_p=dropout_prob)
         self.conv4 = self._make_layer(blocks[2], layers[2], channels[2], channels[3],
