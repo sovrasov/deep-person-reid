@@ -48,7 +48,8 @@ def main():
     blob = transform(im).unsqueeze(0)
 
     torch.onnx.export(model, blob, args.output_name + '.onnx',
-                      verbose=True, export_params=True)
+                      verbose=True, export_params=True, input_names=['data'],
+                      output_names=['reid_embedding'])
 
 
 if __name__ == '__main__':
