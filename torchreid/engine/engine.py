@@ -33,7 +33,7 @@ class Engine(object):
         use_gpu (bool, optional): use gpu. Default is True.
     """
 
-    def __init__(self, datamanager, model, reg_cfg, optimizer=None, scheduler=None, use_gpu=True):
+    def __init__(self, datamanager, model, reg_cfg, batch_augm_cfg, optimizer=None, scheduler=None, use_gpu=True):
         self.datamanager = datamanager
         self.model = model
         self.optimizer = optimizer
@@ -41,6 +41,10 @@ class Engine(object):
         self.use_gpu = (torch.cuda.is_available() and use_gpu)
         self.writer = None
         self.regularizer = get_regularizer(reg_cfg)
+        self.batch_transform_cfg = batch_augm_cfg
+        self.lambd_distr = torch.distributions.beta.Beta(self.batch_transform_cfg.alpha,
+                                                         self.batch_transform_cfg.alpha)
+
         if reg_cfg.of:
             self.of_regularizer = OFPenalty(reg_cfg.of_beta)
         else:
@@ -406,6 +410,14 @@ class Engine(object):
     def _parse_data_for_train(self, data):
         imgs = data[0]
         pids = data[1]
+        return imgs, pids
+
+    def _apply_batch_transform(self, imgs, pids):
+        if self.batch_transform_cfg.enabled:
+            permuted_idx = torch.randperm(imgs.shape[0])
+            lambd = self.batch_transform_cfg.anchor_bias + \
+                    (1 - self.batch_transform_cfg.anchor_bias) * self.lambd_distr.sample((imgs.shape[0],))
+            imgs = lambd * imgs + (1 - lambd) * imgs[permuted_idx]
         return imgs, pids
 
     def _parse_data_for_eval(self, data):

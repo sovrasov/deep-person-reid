@@ -58,10 +58,10 @@ class ImageSoftmaxEngine(Engine):
         )
     """
 
-    def __init__(self, datamanager, model, optimizer, reg_cfg, metric_cfg, scheduler=None, use_gpu=False,
+    def __init__(self, datamanager, model, optimizer, reg_cfg, batch_augm_cfg, metric_cfg, scheduler=None, use_gpu=False,
                  softmax_type='stock', label_smooth=True, conf_penalty=False,
                  m=0.35, s=10, feature_dim=256):
-        super(ImageSoftmaxEngine, self).__init__(datamanager, model, reg_cfg, optimizer, scheduler, use_gpu)
+        super(ImageSoftmaxEngine, self).__init__(datamanager, model, reg_cfg, batch_augm_cfg, optimizer, scheduler, use_gpu)
 
         if softmax_type == 'stock':
             self.criterion = CrossEntropyLoss(
@@ -124,6 +124,7 @@ class ImageSoftmaxEngine(Engine):
             data_time.update(time.time() - end)
 
             imgs, pids = self._parse_data_for_train(data)
+            imgs, pids = self._apply_batch_transform(imgs, pids)
             if self.use_gpu:
                 imgs = imgs.cuda()
                 pids = pids.cuda()

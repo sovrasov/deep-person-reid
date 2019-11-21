@@ -64,7 +64,7 @@ class ImageTripletEngine(Engine):
         )
     """
 
-    def __init__(self, datamanager, model, optimizer, reg_cfg, margin=0.3,
+    def __init__(self, datamanager, model, optimizer, reg_cfg, batch_augm_cfg, margin=0.3,
                  weight_t=1, weight_x=1, scheduler=None, use_gpu=True,
                  label_smooth=True):
         super(ImageTripletEngine, self).__init__(datamanager, model, reg_cfg, optimizer, scheduler, use_gpu)

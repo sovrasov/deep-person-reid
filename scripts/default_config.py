@@ -169,6 +169,13 @@ def get_default_config():
     cfg.reg.of_beta = 1e-6
     cfg.reg.of_start_epoch = 23
 
+    # batch augmentation
+    cfg.batch_augmentation = CN()
+    cfg.batch_augmentation.enabled = False
+    cfg.batch_augmentation.type = 'Pairing'
+    cfg.batch_augmentation.alpha = 1.
+    cfg.batch_augmentation.anchor_bias = 0.8
+
     # test
     cfg.test = CN()
     cfg.test.batch_size = 100
