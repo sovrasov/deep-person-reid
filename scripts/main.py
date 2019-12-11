@@ -6,6 +6,7 @@ import argparse
 
 import torch
 import torch.nn as nn
+import torchcontrib
 
 from default_config import (
     get_default_config, imagedata_kwargs, videodata_kwargs,
@@ -40,6 +41,7 @@ def build_engine(cfg, datamanager, model, optimizer, scheduler):
                 conf_penalty=cfg.loss.softmax.conf_pen,
                 softmax_type='stock',
                 feature_dim=cfg.model.feature_dim,
+                enable_swa=cfg.swa.enabled
             )
         elif cfg.loss.name == 'am_softmax':
             engine = torchreid.engine.ImageSoftmaxEngine(
@@ -56,6 +58,7 @@ def build_engine(cfg, datamanager, model, optimizer, scheduler):
                 m=cfg.loss.softmax.m,
                 s=cfg.loss.softmax.s,
                 feature_dim=cfg.model.feature_dim,
+                enable_swa=cfg.swa.enabled
             )
         elif cfg.loss.name == 'adacos':
             engine = torchreid.engine.ImageSoftmaxEngine(
@@ -70,6 +73,7 @@ def build_engine(cfg, datamanager, model, optimizer, scheduler):
                 conf_penalty=cfg.loss.softmax.conf_pen,
                 softmax_type='ada',
                 feature_dim=cfg.model.feature_dim,
+                enable_swa=cfg.swa.enabled
             )
         elif cfg.loss.name == 'd_softmax':
             engine = torchreid.engine.ImageSoftmaxEngine(
@@ -84,6 +88,7 @@ def build_engine(cfg, datamanager, model, optimizer, scheduler):
                 conf_penalty=cfg.loss.softmax.conf_pen,
                 softmax_type='d_sm',
                 feature_dim=cfg.model.feature_dim,
+                enable_swa=cfg.swa.enabled
             )
         else:
             engine = torchreid.engine.ImageTripletEngine(
@@ -191,7 +196,12 @@ def main():
     if cfg.use_gpu:
         model = nn.DataParallel(model).cuda()
 
-    optimizer = torchreid.optim.build_optimizer(model, **optimizer_kwargs(cfg))
+    if cfg.swa.enabled:
+        base_opt = torchreid.optim.build_optimizer(model, **optimizer_kwargs(cfg))
+        optimizer = torchcontrib.optim.SWA(base_opt, swa_start=cfg.swa.start,
+                                           swa_freq=cfg.swa.freq, swa_lr=cfg.swa.lr)
+    else:
+        optimizer = torchreid.optim.build_optimizer(model, **optimizer_kwargs(cfg))
     scheduler = torchreid.optim.build_lr_scheduler(optimizer, **lr_scheduler_kwargs(cfg))
 
     if cfg.model.resume and check_isfile(cfg.model.resume):

@@ -137,6 +137,13 @@ def get_default_config():
     cfg.adam.beta1 = 0.9 # exponential decay rate for first moment
     cfg.adam.beta2 = 0.999 # exponential decay rate for second moment
 
+    # Stochastic weights averaging
+    cfg.swa = CN()
+    cfg.swa.enabled = False
+    cfg.swa.freq = 5
+    cfg.swa.start = 10
+    cfg.swa.lr = 0.05
+
     # loss
     cfg.loss = CN()
     cfg.loss.name = 'softmax'
