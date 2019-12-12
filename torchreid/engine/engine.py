@@ -35,7 +35,6 @@ class Engine(object):
 
     def __init__(self, datamanager, model, reg_cfg, batch_augm_cfg, optimizer=None, scheduler=None, use_gpu=True, enable_swa=False):
         self.enable_swa = enable_swa
-        print(self.enable_swa)
         self.datamanager = datamanager
         self.model = model
         self.optimizer = optimizer
@@ -139,11 +138,9 @@ class Engine(object):
                 )
                 self._save_checkpoint(epoch, rank1, save_dir)
 
-            if self.enable_swa:
-                self.optimizer.swap_swa_sgd()
-
         if self.enable_swa:
-            self.optimizer.bn_update(trainloader, self.model.module, device=0)
+            self.optimizer.swap_swa_sgd()
+            self.optimizer.bn_update(trainloader, self.model.module, device='cuda')
 
         if max_epoch > 0:
             print('=> Final test')

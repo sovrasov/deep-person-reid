@@ -140,9 +140,9 @@ def get_default_config():
     # Stochastic weights averaging
     cfg.swa = CN()
     cfg.swa.enabled = False
-    cfg.swa.freq = 5
-    cfg.swa.start = 10
-    cfg.swa.lr = 0.05
+    cfg.swa.freq = 1.
+    cfg.swa.start = 20
+    cfg.swa.lr = 0.0003
 
     # loss
     cfg.loss = CN()
