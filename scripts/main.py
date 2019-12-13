@@ -201,7 +201,8 @@ def main():
         steps_per_epoch = len(datamanager.trainloader)
         base_opt = torchreid.optim.build_optimizer(model, **optimizer_kwargs(cfg))
         optimizer = torchcontrib.optim.SWA(base_opt, swa_start=cfg.swa.start * steps_per_epoch,
-                                           swa_freq=int(cfg.swa.freq * steps_per_epoch), swa_lr=cfg.swa.lr)
+                                           swa_freq=int(cfg.swa.freq * steps_per_epoch),
+                                           swa_lr=cfg.swa.lr if cfg.swa.lr > 0 else None)
     else:
         optimizer = torchreid.optim.build_optimizer(model, **optimizer_kwargs(cfg))
     scheduler = torchreid.optim.build_lr_scheduler(optimizer, **lr_scheduler_kwargs(cfg))
