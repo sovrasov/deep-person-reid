@@ -33,7 +33,7 @@ def focal_loss(input_values, gamma):
 
 
 class AMSoftmaxLoss(nn.Module):
-    margin_types = ['cos', 'arc']
+    margin_types = ['cos', 'arc', 'lin']
 
     def __init__(self, num_classes, epsilon=0.1, use_gpu=True,
                  conf_penalty=0.,
@@ -72,6 +72,10 @@ class AMSoftmaxLoss(nn.Module):
 
         if self.margin_type == 'cos':
             phi_theta = cos_theta - self.m
+        elif self.margin_type == 'lin':
+            theta = torch.acos(cos_theta)
+            cos_theta = 1. - 2 * (theta) / math.pi
+            phi_theta = 1. - 2 * (theta + self.m) / math.pi
         else:
             sine = torch.sqrt(1.0 - torch.pow(cos_theta, 2))
             phi_theta = cos_theta * self.cos_m - sine * self.sin_m #cos(theta+m)
