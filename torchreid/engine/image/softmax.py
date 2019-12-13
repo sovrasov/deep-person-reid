@@ -60,7 +60,7 @@ class ImageSoftmaxEngine(Engine):
 
     def __init__(self, datamanager, model, optimizer, reg_cfg, batch_augm_cfg, metric_cfg, scheduler=None, use_gpu=False,
                  softmax_type='stock', label_smooth=True, conf_penalty=False,
-                 m=0.35, s=10, feature_dim=256, enable_swa=False):
+                 m=0.35, s=10, feature_dim=256, enable_swa=False, margin_f='cos'):
         super(ImageSoftmaxEngine, self).__init__(datamanager, model, reg_cfg, batch_augm_cfg, optimizer, scheduler, use_gpu, enable_swa)
 
         if softmax_type == 'stock':
@@ -71,11 +71,13 @@ class ImageSoftmaxEngine(Engine):
                 conf_penalty=conf_penalty
             )
         elif softmax_type == 'am':
+            assert margin_f in AMSoftmaxLoss.margin_types
             self.criterion = AMSoftmaxLoss(
                 num_classes=self.datamanager.num_train_pids,
                 use_gpu=self.use_gpu,
                 conf_penalty=conf_penalty,
-                m=m, s=s
+                m=m, s=s,
+                margin_type=margin_f
             )
         elif softmax_type == 'ada':
             self.criterion = AdaCosLoss(

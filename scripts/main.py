@@ -58,7 +58,8 @@ def build_engine(cfg, datamanager, model, optimizer, scheduler):
                 m=cfg.loss.softmax.m,
                 s=cfg.loss.softmax.s,
                 feature_dim=cfg.model.feature_dim,
-                enable_swa=cfg.swa.enabled
+                enable_swa=cfg.swa.enabled,
+                margin_f=cfg.loss.softmax.margin_f
             )
         elif cfg.loss.name == 'adacos':
             engine = torchreid.engine.ImageSoftmaxEngine(
