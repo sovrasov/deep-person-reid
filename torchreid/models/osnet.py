@@ -252,7 +252,7 @@ class OSNet(nn.Module):
         self.conv4 = self._make_layer(blocks[2], layers[2], channels[2], channels[3],
                                       reduce_spatial_size=False, dropout_p=dropout_prob)
         self.conv5 = Conv1x1(channels[3], channels[3])
-        self.global_avgpool = nn.Conv2d(channels[3], channels[3], (16, 8), groups=channels[3])
+        self.global_avgpool = nn.Conv2d(channels[3], channels[3], (16, 8), groups=channels[3], bias=False)
         #nn.AdaptiveAvgPool2d(1)
         # fully connected layer
         self.fc = self._construct_fc_layer(feature_dim, channels[3], dropout_p=dropout_prob)
@@ -292,7 +292,7 @@ class OSNet(nn.Module):
 
         layers = []
         for dim in fc_dims:
-            layers.append(nn.Linear(input_dim, dim))
+            layers.append(nn.Linear(input_dim, dim, bias=False))
             layers.append(nn.BatchNorm1d(dim))
             if self.loss not in ['am_softmax', 'adacos', 'd_softmax']:
                 layers.append(nn.ReLU(inplace=True))
