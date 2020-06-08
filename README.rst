@@ -73,13 +73,13 @@ Get started: 30 seconds to Torchreid
 1. Import ``torchreid``
 
 .. code-block:: python
-    
+
     import torchreid
 
 2. Load data manager
 
 .. code-block:: python
-    
+
     datamanager = torchreid.data.ImageDataManager(
         root='reid-data',
         sources='market1501',
@@ -94,7 +94,7 @@ Get started: 30 seconds to Torchreid
 3 Build model, optimizer and lr_scheduler
 
 .. code-block:: python
-    
+
     model = torchreid.models.build_model(
         name='resnet50',
         num_classes=datamanager.num_train_pids,
@@ -119,7 +119,7 @@ Get started: 30 seconds to Torchreid
 4. Build engine
 
 .. code-block:: python
-    
+
     engine = torchreid.engine.ImageSoftmaxEngine(
         datamanager,
         model,
@@ -131,7 +131,7 @@ Get started: 30 seconds to Torchreid
 5. Run training and test
 
 .. code-block:: python
-    
+
     engine.run(
         save_dir='log/resnet50',
         max_epoch=60,
@@ -263,6 +263,14 @@ ReID-specific models
 - `OSNet-AIN <https://arxiv.org/abs/1910.06827>`_
 
 
+Custom trained models
+----------------------
+
+Vehicle ReID
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+- Data: VerRi, VerRi-Wild, CompCars, VMMRdb `[config, pytorch snapshot and onnx file] <https://drive.google.com/drive/folders/1C-yTiJrvStMkwgHm9GvqwIG7EKjhSEjl?usp=sharing>`_
+
+
 Useful links
 -------------
 - `OSNet-IBN1-Lite (test-only code with lite docker container) <https://github.com/RodMech/OSNet-IBN1-Lite>`_
@@ -281,7 +289,7 @@ If you find this code useful to your research, please cite the following papers.
       journal={arXiv preprint arXiv:1910.10093},
       year={2019}
     }
-    
+
     @inproceedings{zhou2019osnet,
       title={Omni-Scale Feature Learning for Person Re-Identification},
       author={Zhou, Kaiyang and Yang, Yongxin and Cavallaro, Andrea and Xiang, Tao},
