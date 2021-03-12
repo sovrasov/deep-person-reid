@@ -300,17 +300,17 @@ def load_pretrained_weights(model, file_path='', pretrained_dict=None, resume=Fa
 
     model_dict.update(new_state_dict)
     model.load_state_dict(model_dict)
-
+    message = file_path if file_path else "pretrained dict"
     if len(matched_layers) == 0:
         warnings.warn(
             'The pretrained weights "{}" cannot be loaded, '
             'please check the key names manually '
-            '(** ignored and continue **)'.format(file_path)
+            '(** ignored and continue **)'.format(message)
         )
     else:
         print(
             'Successfully loaded pretrained weights from "{}"'.
-            format(file_path)
+            format(message)
         )
         if len(discarded_layers) > 0:
             print(

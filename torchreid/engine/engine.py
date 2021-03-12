@@ -223,6 +223,14 @@ class Engine:
             raise ValueError('visrank can be set to True only if test_only=True')
 
         if test_only:
+            for name in self.get_model_names():
+                opti = self.optims[name]
+                sch = self.scheds[name]
+                lr = opti.param_groups[0]['lr']
+                print(f'lr: {name}, {lr}')
+                print(f'sch: {name}, {sch}')
+                print(f'epoch: {start_epoch}')
+
             self.test(
                 0,
                 dist_metric=dist_metric,

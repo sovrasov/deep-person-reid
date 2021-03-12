@@ -43,23 +43,23 @@ def reset_config(cfg, args):
         cfg.mutual_learning.aux_configs = args.auxiliary_models_cfg
 
 def build_auxiliary_model(config_file, num_classes, use_gpu, device_ids=None):
-    cfg = get_default_config()
-    cfg.use_gpu = use_gpu
-    cfg.merge_from_file(config_file)
+    aux_cfg = get_default_config()
+    aux_cfg.use_gpu = use_gpu
+    aux_cfg.merge_from_file(config_file)
 
-    model = torchreid.models.build_model(**model_kwargs(cfg, num_classes))
+    model = torchreid.models.build_model(**model_kwargs(aux_cfg, num_classes))
 
-    if cfg.use_gpu:
+    if aux_cfg.use_gpu:
         assert device_ids is not None
 
         model = DataParallel(model, device_ids=device_ids, output_device=0).cuda(device_ids[0])
 
-    optimizer = torchreid.optim.build_optimizer(model, **optimizer_kwargs(cfg))
-    scheduler = torchreid.optim.build_lr_scheduler(optimizer, **lr_scheduler_kwargs(cfg))
+    optimizer = torchreid.optim.build_optimizer(model, **optimizer_kwargs(aux_cfg))
+    scheduler = torchreid.optim.build_lr_scheduler(optimizer, **lr_scheduler_kwargs(aux_cfg))
 
-    if cfg.model.resume and check_isfile(cfg.model.resume):
-        cfg.train.start_epoch = resume_from_checkpoint(
-            cfg.model.resume, model, optimizer=optimizer, scheduler=scheduler
+    if aux_cfg.model.resume and check_isfile(aux_cfg.model.resume):
+        aux_cfg.train.start_epoch = resume_from_checkpoint(
+            aux_cfg.model.resume, model, optimizer=optimizer, scheduler=scheduler
         )
 
     return model, optimizer, scheduler
